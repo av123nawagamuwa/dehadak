@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 6% 98%;
+    --foreground: 24 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 10%;
+    --primary: 45 93% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 30 6% 96%;
+    --secondary-foreground: 24 10% 10%;
+    --muted: 30 6% 96%;
+    --muted-foreground: 25 6% 45%;
+    --accent: 30 6% 96%;
+    --accent-foreground: 24 10% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 24 6% 90%;
+    --input: 24 6% 90%;
+    --ring: 45 93% 47%;
+    --radius: 0.625rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 45 93% 47%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 30 6% 96%;
+    --sidebar-accent-foreground: 24 10% 10%;
+    --sidebar-border: 24 6% 90%;
+    --sidebar-ring: 45 93% 47%;
+  }
+
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-light-bg text-foreground font-sans antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .gradient-hero {
+    background: linear-gradient(135deg, #EAB308 0%, #F59E0B 25%, #FB7185 75%, #EC4899 100%);
+  }
+  
+  .gradient-card {
+    background: linear-gradient(180deg, #FFFFFF 0%, #FEF3C7 100%);
+  }
+  
+  .gradient-dark {
+    background: linear-gradient(180deg, #0F0F0F 0%, #1A1A1A 100%);
+  }
+  
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #EAB308 0%, #F59E0B 50%, #FB7185 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  .glass-dark {
+    background: rgba(15, 15, 15, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  
+  .shadow-gold {
+    box-shadow: 0 4px 24px rgba(234, 179, 8, 0.25);
+  }
+  
+  .shadow-gold-lg {
+    box-shadow: 0 8px 32px rgba(234, 179, 8, 0.35);
+  }
+}
