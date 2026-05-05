@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { motion, useInView } from 'framer-motion'
 import {
   Shield,
@@ -30,6 +31,8 @@ function FadeUp({ children, delay = 0 }: { children: React.ReactNode; delay?: nu
 }
 
 export default function Home() {
+  const { t } = useTranslation()
+
   useEffect(() => {
     // Auto-authenticate for demo
     localStorage.setItem('dehadak_auth', 'demo-token')
@@ -89,44 +92,41 @@ export default function Home() {
   const trustCards = [
     {
       icon: Shield,
-      title: 'Privacy First',
-      description:
-        'Your identity is only shared with profiles you approve. You are always in control.',
+      title: t('home.trust.privacyFirstTitle'),
+      description: t('home.trust.privacyFirstDesc'),
     },
     {
       icon: BadgeCheck,
-      title: 'Verified Accounts',
-      description:
-        'Every profile is manually reviewed and verified for authenticity.',
+      title: t('home.trust.verifiedAccountsTitle'),
+      description: t('home.trust.verifiedAccountsDesc'),
     },
     {
       icon: Heart,
-      title: 'Genuine Connections',
-      description:
-        'We attract serious seekers, making your search efficient and meaningful.',
+      title: t('home.trust.genuineConnectionsTitle'),
+      description: t('home.trust.genuineConnectionsDesc'),
     },
   ]
 
   const steps = [
     {
       icon: UserPlus,
-      title: 'Create Profile',
-      description: 'Fill your details in our guided profile builder',
+      title: t('home.steps.createProfileTitle'),
+      description: t('home.steps.createProfileDesc'),
     },
     {
       icon: Search,
-      title: 'Discover Matches',
-      description: 'Browse verified profiles with advanced filters',
+      title: t('home.steps.discoverMatchesTitle'),
+      description: t('home.steps.discoverMatchesDesc'),
     },
     {
       icon: Heart,
-      title: 'Show Interest',
-      description: 'Express interest in profiles that resonate with you',
+      title: t('home.steps.showInterestTitle'),
+      description: t('home.steps.showInterestDesc'),
     },
     {
       icon: MessageCircle,
-      title: 'Connect',
-      description: 'Once mutual interest is established, start your journey',
+      title: t('home.steps.connectTitle'),
+      description: t('home.steps.connectDesc'),
     },
   ]
 
@@ -211,15 +211,14 @@ export default function Home() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 text-center pt-20">
           <FadeUp>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
-              Find Your{' '}
-              <span className="text-gradient-gold">Perfect Match</span>
+              {t('home.heroTitlePrefix')}{' '}
+              <span className="text-gradient-gold">{t('home.heroTitleHighlight')}</span>
             </h1>
           </FadeUp>
 
           <FadeUp delay={0.1}>
             <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto mb-10 leading-relaxed">
-              Sri Lanka's most trusted, privacy-focused matrimonial platform.
-              Where two hearts begin one journey.
+              {t('home.heroSubtitle')}
             </p>
           </FadeUp>
 
@@ -229,13 +228,13 @@ export default function Home() {
                 to="/profile-creation"
                 className="px-8 py-4 rounded-full bg-gold text-dark-bg font-semibold text-base hover:bg-gold-light transition-colors shadow-gold hover:shadow-gold-lg w-full sm:w-auto"
               >
-                Create Your Profile
+                {t('home.createYourProfile')}
               </Link>
               <Link
                 to="/search"
                 className="px-8 py-4 rounded-full border-2 border-white/30 text-white font-semibold text-base hover:bg-white/10 transition-colors w-full sm:w-auto"
               >
-                Search Profiles
+                {t('home.searchProfiles')}
               </Link>
             </div>
           </FadeUp>
@@ -243,13 +242,13 @@ export default function Home() {
           <FadeUp delay={0.3}>
             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/50">
               <span className="flex items-center gap-1.5">
-                <BadgeCheck className="w-4 h-4 text-gold" /> Verified Profiles
+                <BadgeCheck className="w-4 h-4 text-gold" /> {t('home.verifiedProfiles')}
               </span>
               <span className="flex items-center gap-1.5">
-                <Shield className="w-4 h-4 text-gold" /> Privacy Protected
+                <Shield className="w-4 h-4 text-gold" /> {t('home.privacyProtected')}
               </span>
               <span className="flex items-center gap-1.5">
-                <Heart className="w-4 h-4 text-gold" /> 5000+ Success Stories
+                <Heart className="w-4 h-4 text-gold" /> {t('home.successStories')}
               </span>
             </div>
           </FadeUp>
@@ -271,11 +270,10 @@ export default function Home() {
           <FadeUp>
             <div className="text-center mb-14">
               <h2 className="text-3xl font-semibold text-foreground mb-4">
-                Your Privacy, Our Promise
+                {t('home.privacyPromiseTitle')}
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                We understand the importance of discretion in Sri Lankan culture.
-                Your information is safe with us.
+                {t('home.privacyPromiseSubtitle')}
               </p>
             </div>
           </FadeUp>
@@ -304,10 +302,10 @@ export default function Home() {
           <FadeUp>
             <div className="text-center mb-14">
               <h2 className="text-3xl font-semibold text-foreground mb-4">
-                Begin Your Journey in 4 Steps
+                {t('home.steps.title')}
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Our guided process makes finding your life partner simple and respectful
+                {t('home.steps.subtitle')}
               </p>
             </div>
           </FadeUp>
@@ -345,17 +343,17 @@ export default function Home() {
             <div className="flex items-center justify-between mb-10">
               <div>
                 <h2 className="text-3xl font-semibold text-foreground mb-2">
-                  Recently Joined
+                  {t('home.recentlyJoined')}
                 </h2>
                 <p className="text-muted-foreground">
-                  New members looking for their perfect match
+                  {t('home.recentlyJoinedSubtitle')}
                 </p>
               </div>
               <Link
                 to="/search"
                 className="hidden sm:flex items-center gap-1 text-sm font-medium text-gold hover:text-gold-dark transition-colors"
               >
-                View All
+                {t('home.viewAll')}
                 <ChevronDown className="w-4 h-4 -rotate-90" />
               </Link>
             </div>
@@ -375,7 +373,7 @@ export default function Home() {
                 to="/search"
                 className="inline-flex items-center gap-1 text-sm font-medium text-gold hover:text-gold-dark transition-colors"
               >
-                View All Profiles
+                {t('home.viewAllProfiles')}
                 <ChevronDown className="w-4 h-4 -rotate-90" />
               </Link>
             </div>
@@ -389,10 +387,10 @@ export default function Home() {
           <FadeUp>
             <div className="text-center mb-14">
               <h2 className="text-3xl font-semibold text-foreground mb-4">
-                Stories of Two Hearts
+                {t('home.storiesTitle')}
               </h2>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                Real stories from couples who found each other through Dehadak
+                {t('home.storiesSubtitle')}
               </p>
             </div>
           </FadeUp>
@@ -426,10 +424,10 @@ export default function Home() {
           <FadeUp>
             <div className="text-center mb-14">
               <h2 className="text-3xl font-semibold text-white mb-4">
-                Choose Your Plan
+                {t('home.choosePlanTitle')}
               </h2>
               <p className="text-white/60 max-w-xl mx-auto">
-                Simple, transparent pricing. Invest in finding your life partner.
+                {t('home.choosePlanSubtitle')}
               </p>
             </div>
           </FadeUp>
@@ -448,7 +446,7 @@ export default function Home() {
                 to="/pricing"
                 className="inline-flex items-center gap-1 text-sm font-medium text-gold hover:text-gold-light transition-colors"
               >
-                View Full Pricing Details
+                {t('home.viewFullPricing')}
                 <ChevronDown className="w-4 h-4 -rotate-90" />
               </Link>
             </div>
@@ -461,13 +459,12 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 text-center">
           <FadeUp>
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Ready to Find Your Partner?
+              {t('home.ctaTitle')}
             </h2>
           </FadeUp>
           <FadeUp delay={0.1}>
             <p className="text-white/80 mb-8 max-w-lg mx-auto">
-              Join thousands of Sri Lankans who have found their perfect match
-              through Dehadak.
+              {t('home.ctaSubtitle')}
             </p>
           </FadeUp>
           <FadeUp delay={0.2}>
@@ -475,7 +472,7 @@ export default function Home() {
               to="/profile-creation"
               className="inline-block px-10 py-4 rounded-full bg-dark-bg text-white font-semibold text-base hover:bg-dark-surface transition-colors shadow-xl"
             >
-              Get Started — It&rsquo;s Free to Browse
+              {t('home.ctaButton')}
             </Link>
           </FadeUp>
         </div>

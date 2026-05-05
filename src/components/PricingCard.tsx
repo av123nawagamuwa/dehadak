@@ -1,4 +1,5 @@
 import { Check, Crown } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface PricingCardProps {
   name: string
@@ -17,8 +18,10 @@ export default function PricingCard({
   total,
   features,
   featured = false,
-  ctaText = 'Subscribe Now',
+  ctaText,
 }: PricingCardProps) {
+  const { t } = useTranslation()
+
   return (
     <div
       className={`relative rounded-xl p-6 transition-all duration-300 hover:-translate-y-2 ${
@@ -32,7 +35,7 @@ export default function PricingCard({
         <div className="absolute -top-3 left-1/2 -translate-x-1/2">
           <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gold text-dark-bg text-xs font-bold shadow-md">
             <Crown className="w-3.5 h-3.5" />
-            Most Popular
+            {t('pricingCard.mostPopular')}
           </div>
         </div>
       )}
@@ -45,7 +48,7 @@ export default function PricingCard({
         {/* Price */}
         <div className="mb-4">
           <span className="text-3xl font-bold text-foreground">{price}</span>
-          <span className="text-sm text-muted-foreground"> /month</span>
+          <span className="text-sm text-muted-foreground"> {t('pricingCard.perMonth')}</span>
         </div>
         <p className="text-sm font-medium text-gold mb-6">{total}</p>
 
@@ -72,7 +75,7 @@ export default function PricingCard({
               : 'border-2 border-gold text-gold hover:bg-gold hover:text-dark-bg'
           }`}
         >
-          {ctaText}
+          {ctaText ?? t('pricingCard.subscribeNow')}
         </button>
       </div>
     </div>

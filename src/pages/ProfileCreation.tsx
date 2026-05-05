@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   User,
@@ -30,10 +31,10 @@ import { Switch } from '@/components/ui/switch'
 import PricingCard from '@/components/PricingCard'
 
 const steps = [
-  { label: 'Personal Info' },
-  { label: 'Parents Info' },
-  { label: 'Private' },
-  { label: 'Payment' },
+  { key: 'personalInfo' },
+  { key: 'parentsInfo' },
+  { key: 'private' },
+  { key: 'payment' },
 ]
 
 const slideVariants = {
@@ -153,9 +154,11 @@ const months = [
 const days = Array.from({ length: 31 }, (_, i) => i + 1)
 
 export default function ProfileCreation() {
+  const { t } = useTranslation()
   const [currentStep, setCurrentStep] = useState(1)
   const [direction, setDirection] = useState(0)
   const [formData, setFormData] = useState<FormData>(initialForm)
+  const translatedSteps = steps.map((step) => ({ label: t(`profileCreation.steps.${step.key}`) }))
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -1049,16 +1052,16 @@ export default function ProfileCreation() {
         {/* Header */}
         <div className="text-center mb-10">
           <h1 className="text-3xl font-semibold mb-2">
-            Create Your Profile
+            {t('profileCreation.title')}
           </h1>
           <p className="text-muted-foreground">
-            Complete the steps below to find your perfect match
+            {t('profileCreation.subtitle')}
           </p>
         </div>
 
         {/* Stepper */}
         <div className="mb-10">
-          <Stepper steps={steps} currentStep={currentStep} />
+          <Stepper steps={translatedSteps} currentStep={currentStep} />
         </div>
 
         {/* Step Content */}
@@ -1092,18 +1095,18 @@ export default function ProfileCreation() {
               }`}
             >
               <ChevronLeft className="w-4 h-4" />
-              Back
+              {t('profileCreation.back')}
             </button>
 
             <div className="text-sm text-muted-foreground hidden sm:block">
-              Step {currentStep} of 4
+              {t('profileCreation.stepOf', { current: currentStep, total: 4 })}
             </div>
 
             <button
               onClick={nextStep}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gold text-dark-bg font-semibold text-sm hover:bg-gold-light transition-colors shadow-gold hover:shadow-gold-lg"
             >
-              {currentStep === 4 ? 'Complete Registration' : 'Save & Continue'}
+              {currentStep === 4 ? t('profileCreation.completeRegistration') : t('profileCreation.saveContinue')}
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion } from 'framer-motion'
 import { Check, Crown, HelpCircle } from 'lucide-react'
 import PricingCard from '@/components/PricingCard'
@@ -97,6 +98,7 @@ const faqs = [
 ]
 
 export default function PricingPage() {
+  const { t } = useTranslation()
   const [country, setCountry] = useState('lk')
 
   const countryPricing: Record<string, typeof plans> = {
@@ -130,7 +132,7 @@ export default function PricingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl md:text-4xl font-bold text-white mb-4"
           >
-            Simple, Transparent Pricing
+            {t('pricing.heroTitle')}
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -138,7 +140,7 @@ export default function PricingPage() {
             transition={{ delay: 0.1 }}
             className="text-lg text-white/60 max-w-xl mx-auto"
           >
-            Invest in finding your life partner. No hidden fees, no surprises.
+            {t('pricing.heroSubtitle')}
           </motion.p>
         </div>
       </section>
@@ -151,16 +153,16 @@ export default function PricingPage() {
           transition={{ delay: 0.2 }}
           className="bg-white rounded-xl shadow-md p-4 mb-10 max-w-xs mx-auto border border-light-border"
         >
-          <label className="block text-sm font-medium mb-2">Where do you live?</label>
+          <label className="block text-sm font-medium mb-2">{t('pricing.countryLabel')}</label>
           <Select value={country} onValueChange={setCountry}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="lk">Sri Lanka</SelectItem>
-              <SelectItem value="us">United States</SelectItem>
-              <SelectItem value="uk">United Kingdom</SelectItem>
-              <SelectItem value="au">Australia</SelectItem>
+              <SelectItem value="lk">{t('pricing.countries.lk')}</SelectItem>
+              <SelectItem value="us">{t('pricing.countries.us')}</SelectItem>
+              <SelectItem value="uk">{t('pricing.countries.uk')}</SelectItem>
+              <SelectItem value="au">{t('pricing.countries.au')}</SelectItem>
             </SelectContent>
           </Select>
         </motion.div>
@@ -187,22 +189,22 @@ export default function PricingPage() {
           className="mb-16"
         >
           <h2 className="text-2xl font-semibold text-center mb-8">
-            Compare Plans
+            {t('pricing.comparePlans')}
           </h2>
           <div className="bg-white rounded-xl shadow-sm border border-light-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-light-border bg-light-bg">
-                    <th className="text-left px-6 py-4 text-sm font-semibold">Feature</th>
-                    <th className="text-center px-6 py-4 text-sm font-semibold">Basic</th>
+                    <th className="text-left px-6 py-4 text-sm font-semibold">{t('pricing.feature')}</th>
+                    <th className="text-center px-6 py-4 text-sm font-semibold">{t('pricing.basic')}</th>
                     <th className="text-center px-6 py-4 text-sm font-semibold text-gold bg-gold/5">
                       <span className="flex items-center justify-center gap-1">
                         <Crown className="w-4 h-4" />
-                        Standard
+                        {t('pricing.standard')}
                       </span>
                     </th>
-                    <th className="text-center px-6 py-4 text-sm font-semibold">Premium</th>
+                    <th className="text-center px-6 py-4 text-sm font-semibold">{t('pricing.premium')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,7 +260,7 @@ export default function PricingPage() {
           className="mb-16"
         >
           <h2 className="text-2xl font-semibold text-center mb-8">
-            Frequently Asked Questions
+            {t('pricing.faqTitle')}
           </h2>
           <div className="max-w-2xl mx-auto">
             <Accordion type="single" collapsible className="space-y-3">
@@ -289,12 +291,12 @@ export default function PricingPage() {
         >
           <div className="bg-gold/10 rounded-xl p-8 max-w-xl mx-auto">
             <HelpCircle className="w-10 h-10 text-gold mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Have Questions?</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('pricing.haveQuestions')}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Our support team is here to help you choose the right plan.
+              {t('pricing.supportSubtitle')}
             </p>
             <button className="px-6 py-2.5 rounded-xl bg-gold text-dark-bg font-semibold text-sm hover:bg-gold-light transition-colors">
-              Contact Support
+              {t('pricing.contactSupport')}
             </button>
           </div>
         </motion.div>

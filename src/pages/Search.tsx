@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search,
@@ -134,6 +135,7 @@ const filterOptions = {
 }
 
 export default function SearchPage() {
+  const { t } = useTranslation()
   const [filters, setFilters] = useState<FilterState>({
     gender: '',
     ageMin: 18,
@@ -205,45 +207,48 @@ export default function SearchPage() {
     <div className="space-y-4">
       {!inSheet && (
         <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-lg">Filters</h3>
+          <h3 className="font-semibold text-lg">{t('search.filters')}</h3>
           {activeFilterCount > 0 && (
             <button
               onClick={clearFilters}
               className="text-sm text-gold hover:text-gold-dark transition-colors"
             >
-              Clear All
+              {t('search.clearFilters')}
             </button>
           )}
         </div>
       )}
 
-      <Accordion type="multiple" defaultValue={['I\'m Looking For']} className="space-y-2">
+      <Accordion type="multiple" defaultValue={[t('search.iLookingFor')]} className="space-y-2">
         {/* Gender */}
-        <FilterSection title="I'm Looking For">
+        <FilterSection title={t('search.iLookingFor')}>
           <div className="flex gap-3">
-            {['Male', 'Female'].map((g) => (
+            {[
+              { key: 'male', label: t('search.male') },
+              { key: 'female', label: t('search.female') }
+            ].map(({ key, label }) => (
               <button
-                key={g}
-                onClick={() => setFilters((prev) => ({ ...prev, gender: prev.gender === g ? '' : g }))}
+                key={key}
+                onClick={() => setFilters((prev) => ({ ...prev, gender: prev.gender === key ? '' : key }))}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${
-                  filters.gender === g
+                  filters.gender === key
                     ? 'border-gold bg-gold/10 text-gold'
                     : 'border-light-border hover:border-gold/50'
                 }`}
               >
                 <User className="w-4 h-4" />
-                {g}
+                {label}
               </button>
             ))}
           </div>
         </FilterSection>
 
         {/* Age Range */}
-        <FilterSection title="Age Range">
+        <FilterSection title={t('search.ageRange')}>
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <label className="text-xs text-muted-foreground mb-1 block">From</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('common.from')}</label>
                 <Input
                   type="number"
                   value={filters.ageMin}
@@ -253,7 +258,7 @@ export default function SearchPage() {
               </div>
               <span className="text-muted-foreground mt-5">-</span>
               <div className="flex-1">
-                <label className="text-xs text-muted-foreground mb-1 block">To</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('common.to')}</label>
                 <Input
                   type="number"
                   value={filters.ageMax}
@@ -274,7 +279,7 @@ export default function SearchPage() {
         </FilterSection>
 
         {/* Religion */}
-        <FilterSection title="Religion">
+        <FilterSection title={t('search.religion')}>
           <div className="space-y-2">
             {filterOptions.religion.map((r) => (
               <label key={r} className="flex items-center gap-2 cursor-pointer">
@@ -289,7 +294,7 @@ export default function SearchPage() {
         </FilterSection>
 
         {/* Ethnicity */}
-        <FilterSection title="Ethnicity">
+        <FilterSection title={t('search.ethnicity')}>
           <div className="space-y-2">
             {filterOptions.ethnicity.map((e) => (
               <label key={e} className="flex items-center gap-2 cursor-pointer">
@@ -304,7 +309,7 @@ export default function SearchPage() {
         </FilterSection>
 
         {/* Education */}
-        <FilterSection title="Education">
+        <FilterSection title={t('search.education')}>
           <div className="space-y-2">
             {filterOptions.education.map((e) => (
               <label key={e} className="flex items-center gap-2 cursor-pointer">
@@ -319,7 +324,7 @@ export default function SearchPage() {
         </FilterSection>
 
         {/* Profession */}
-        <FilterSection title="Profession">
+        <FilterSection title={t('search.profession')}>
           <div className="space-y-2">
             {filterOptions.profession.map((p) => (
               <label key={p} className="flex items-center gap-2 cursor-pointer">
@@ -334,7 +339,7 @@ export default function SearchPage() {
         </FilterSection>
 
         {/* Civil Status */}
-        <FilterSection title="Civil Status">
+        <FilterSection title={t('search.civilStatus')}>
           <div className="space-y-2">
             {filterOptions.civilStatus.map((s) => (
               <label key={s} className="flex items-center gap-2 cursor-pointer">
@@ -349,24 +354,27 @@ export default function SearchPage() {
         </FilterSection>
 
         {/* Differently Abled */}
-        <FilterSection title="Differently Abled">
+        <FilterSection title={t('search.differentlyAbled')}>
           <div className="flex gap-3">
-            {['Yes', 'No'].map((val) => (
+            {[
+              { key: 'Yes', label: t('common.yes') },
+              { key: 'No', label: t('common.no') },
+            ].map(({ key, label }) => (
               <button
-                key={val}
+                key={key}
                 onClick={() =>
                   setFilters((prev) => ({
                     ...prev,
-                    differentlyAbled: prev.differentlyAbled === val ? null : val,
+                    differentlyAbled: prev.differentlyAbled === key ? null : key,
                   }))
                 }
                 className={`flex-1 py-2 rounded-lg border-2 text-sm transition-all ${
-                  filters.differentlyAbled === val
+                  filters.differentlyAbled === key
                     ? 'border-gold bg-gold/10 text-gold'
                     : 'border-light-border'
                 }`}
               >
-                {val}
+                {label}
               </button>
             ))}
           </div>
@@ -377,7 +385,7 @@ export default function SearchPage() {
           <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-2">
               <BadgeCheck className="w-4 h-4 text-gold" />
-              <span className="text-sm font-medium">Verified Only</span>
+              <span className="text-sm font-medium">{t('search.verifiedOnly')}</span>
             </div>
             <Switch
               checked={filters.verifiedOnly}
@@ -394,9 +402,9 @@ export default function SearchPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-semibold mb-2">Find Your Match</h1>
+          <h1 className="text-3xl font-semibold mb-2">{t('search.title')}</h1>
           <p className="text-muted-foreground">
-            Showing {profiles.length} verified profiles
+            {t('search.subtitle', { count: profiles.length })}
           </p>
         </div>
 
@@ -407,7 +415,7 @@ export default function SearchPage() {
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name, profession, location..."
+              placeholder={t('search.searchPlaceholder')}
               className="pl-10"
             />
           </div>
@@ -418,7 +426,7 @@ export default function SearchPage() {
               <SheetTrigger asChild>
                 <button className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-xl border border-light-border bg-white hover:bg-light-bg transition-colors">
                   <SlidersHorizontal className="w-4 h-4" />
-                  Filters
+                  {t('search.filters')}
                   {activeFilterCount > 0 && (
                     <span className="w-5 h-5 rounded-full bg-gold text-dark-bg text-xs font-bold flex items-center justify-center">
                       {activeFilterCount}
@@ -428,7 +436,7 @@ export default function SearchPage() {
               </SheetTrigger>
               <SheetContent side="left" className="w-[340px] p-4 overflow-y-auto">
                 <SheetHeader>
-                  <SheetTitle>Filters</SheetTitle>
+                  <SheetTitle>{t('search.filters')}</SheetTitle>
                 </SheetHeader>
                 <FilterSidebar inSheet={true} />
                 <div className="sticky bottom-0 mt-4 pt-4 border-t border-light-border bg-white flex gap-3">
@@ -439,13 +447,13 @@ export default function SearchPage() {
                     }}
                     className="flex-1 py-3 rounded-xl border border-light-border text-sm font-medium"
                   >
-                    Clear
+                    {t('search.clearFilters')}
                   </button>
                   <button
                     onClick={() => setFilterSheetOpen(false)}
                     className="flex-1 py-3 rounded-xl bg-gold text-dark-bg font-semibold text-sm"
                   >
-                    Apply
+                    {t('search.applyFilters')}
                   </button>
                 </div>
               </SheetContent>
@@ -454,14 +462,14 @@ export default function SearchPage() {
             {/* Sort Dropdown */}
             <div className="relative group">
               <button className="flex items-center gap-2 px-4 py-2 rounded-xl border border-light-border bg-white hover:bg-light-bg transition-colors text-sm">
-                Sort: {sortBy === 'latest' ? 'Latest' : sortBy === 'popular' ? 'Popular' : 'Near Me'}
+                {t('search.sort')}: {sortBy === 'latest' ? t('search.latest') : sortBy === 'popular' ? t('search.popular') : t('search.nearMe')}
                 <ChevronDown className="w-4 h-4" />
               </button>
               <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-light-border overflow-hidden hidden group-hover:block z-10">
                 {[
-                  { value: 'latest', label: 'Latest First' },
-                  { value: 'popular', label: 'Popular' },
-                  { value: 'near', label: 'Near Me' },
+                  { value: 'latest', label: t('search.latestFirst') },
+                  { value: 'popular', label: t('search.popular') },
+                  { value: 'near', label: t('search.nearMe') },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -508,7 +516,7 @@ export default function SearchPage() {
             {/* Load More */}
             <div className="mt-10 text-center">
               <button className="px-8 py-3 rounded-xl border-2 border-gold text-gold font-semibold hover:bg-gold hover:text-dark-bg transition-colors">
-                Load More Profiles
+                {t('search.loadMoreProfiles')}
               </button>
             </div>
           </div>

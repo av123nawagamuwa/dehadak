@@ -1,7 +1,15 @@
 import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { Heart, Facebook, Instagram, Phone, Mail, MapPin } from 'lucide-react'
 
 export default function Footer() {
+  const { t, i18n } = useTranslation()
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('dehadak_language', lang)
+  }
+
   return (
     <footer className="bg-dark-bg border-t border-dark-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -13,8 +21,7 @@ export default function Footer() {
               <span className="text-xl font-semibold text-white">Dehadak</span>
             </div>
             <p className="text-sm text-white/50 mb-6 leading-relaxed">
-              Sri Lanka's most trusted matrimonial platform. Connecting hearts
-              with privacy, authenticity, and cultural values.
+              {t('footer.description')}
             </p>
             <div className="flex items-center gap-3">
               <a
@@ -41,14 +48,14 @@ export default function Footer() {
           {/* Quick Links */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              Quick Links
+              {t('footer.quickLinks')}
             </h3>
             <ul className="space-y-3">
               {[
-                { label: 'Home', path: '/' },
-                { label: 'Search Profiles', path: '/search' },
-                { label: 'Pricing Plans', path: '/pricing' },
-                { label: 'Create Profile', path: '/profile-creation' },
+                { label: t('nav.home'), path: '/' },
+                { label: t('footer.searchProfiles'), path: '/search' },
+                { label: t('footer.pricingPlans'), path: '/pricing' },
+                { label: t('footer.createProfile'), path: '/profile-creation' },
               ].map((link) => (
                 <li key={link.path}>
                   <Link
@@ -65,14 +72,14 @@ export default function Footer() {
           {/* Support */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              Support
+              {t('footer.support')}
             </h3>
             <ul className="space-y-3">
               {[
-                'Help Center',
-                'Privacy Policy',
-                'Terms of Service',
-                'Safety Guidelines',
+                t('nav.helpCenter'),
+                t('footer.privacyPolicy'),
+                t('footer.termsOfService'),
+                t('footer.safetyGuidelines'),
               ].map((item) => (
                 <li key={item}>
                   <a
@@ -89,7 +96,7 @@ export default function Footer() {
           {/* Contact */}
           <div>
             <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
-              Contact Us
+              {t('footer.contactUs')}
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
@@ -115,14 +122,28 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="py-6 border-t border-dark-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-white/40">
-            © 2025 Dehadak.lk — Two Hearts, One Journey
+            {t('footer.copyright')}
           </p>
           <div className="flex items-center gap-3">
-            <button className="px-3 py-1.5 rounded-full text-xs font-medium bg-gold text-dark-bg">
-              English
+            <button
+              onClick={() => changeLanguage('en')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                i18n.language === 'en'
+                  ? 'bg-gold text-dark-bg'
+                  : 'bg-dark-surface text-white/50 border border-dark-border'
+              }`}
+            >
+              {t('common.english')}
             </button>
-            <button className="px-3 py-1.5 rounded-full text-xs font-medium bg-dark-surface text-white/50 border border-dark-border">
-              සිංහල
+            <button
+              onClick={() => changeLanguage('si')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                i18n.language === 'si'
+                  ? 'bg-gold text-dark-bg'
+                  : 'bg-dark-surface text-white/50 border border-dark-border'
+              }`}
+            >
+              {t('common.sinhala')}
             </button>
           </div>
         </div>

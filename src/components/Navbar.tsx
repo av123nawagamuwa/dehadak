@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import {
   Heart,
   Search,
@@ -38,9 +39,15 @@ export default function Navbar({ transparent = false }: NavbarProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
 
   const isHomePage = location.pathname === '/'
   const shouldBeTransparent = transparent && isHomePage && !scrolled
+
+  const changeLanguage = (lang: string) => {
+    i18n.changeLanguage(lang)
+    localStorage.setItem('dehadak_language', lang)
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -56,9 +63,9 @@ export default function Navbar({ transparent = false }: NavbarProps) {
   }, [location])
 
   const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/search', label: 'Search' },
-    { path: '/pricing', label: 'Pricing' },
+    { path: '/', label: t('nav.home') },
+    { path: '/search', label: t('nav.search') },
+    { path: '/pricing', label: t('nav.pricing') },
   ]
 
   const isActive = (path: string) => {
@@ -101,7 +108,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                 Dehadak
               </span>
               <span className="text-[10px] -mt-1 text-gold/80 tracking-wide">
-                Two Hearts, One Journey
+                {t('nav.brandTagline')}
               </span>
             </div>
           </Link>
@@ -129,11 +136,25 @@ export default function Navbar({ transparent = false }: NavbarProps) {
           <div className="flex items-center gap-3">
             {/* Language Toggle - Desktop */}
             <div className="hidden md:flex items-center bg-dark-surface rounded-full p-0.5 border border-dark-border">
-              <button className="px-3 py-1.5 text-xs font-medium rounded-full bg-gold text-dark-bg">
-                English
+              <button 
+                onClick={() => changeLanguage('en')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                  i18n.language === 'en'
+                    ? 'bg-gold text-dark-bg'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {t('common.english')}
               </button>
-              <button className="px-3 py-1.5 text-xs font-medium rounded-full text-white/60 hover:text-white transition-colors">
-                සිංහල
+              <button 
+                onClick={() => changeLanguage('si')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+                  i18n.language === 'si'
+                    ? 'bg-gold text-dark-bg'
+                    : 'text-white/60 hover:text-white'
+                }`}
+              >
+                {t('common.sinhala')}
               </button>
             </div>
 
@@ -156,7 +177,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                     <p className="text-xs text-white/50">Ad ID: DH-1165397708</p>
                     <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gold/20 text-gold">
                       <Crown className="w-3 h-3 mr-1" />
-                      Premium
+                      {t('profileCard.premium')}
                     </span>
                   </div>
                   <DropdownMenuItem
@@ -164,28 +185,28 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                     className="text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
                   >
                     <User className="w-4 h-4 mr-2" />
-                    View My Profile
+                    {t('nav.viewMyProfile')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate('/messages')}
                     className="text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
                   >
                     <MessageCircle className="w-4 h-4 mr-2" />
-                    My Connections
+                    {t('nav.connections')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate('/pricing')}
                     className="text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
-                    Billing
+                    {t('nav.billing')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate('/profile')}
                     className="text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
                   >
                     <Settings className="w-4 h-4 mr-2" />
-                    Account Settings
+                    {t('nav.accountSettings')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-dark-border" />
                   <DropdownMenuItem
@@ -193,14 +214,14 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                     className="text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
                   >
                     <FileText className="w-4 h-4 mr-2" />
-                    Edit My Ad
+                    {t('nav.editAd')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate('/help')}
                     className="text-white/80 hover:text-white hover:bg-white/5 focus:bg-white/5 cursor-pointer"
                   >
                     <HelpCircle className="w-4 h-4 mr-2" />
-                    Help Center
+                    {t('nav.helpCenter')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-dark-border" />
                   <DropdownMenuItem
@@ -212,7 +233,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                     className="text-red-400 hover:text-red-300 hover:bg-red-500/10 focus:bg-red-500/10 cursor-pointer"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Sign Out
+                    {t('nav.signOut')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -228,7 +249,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                   to="/profile-creation"
                   className="px-5 py-2 rounded-full bg-gold text-dark-bg font-semibold text-sm hover:bg-gold-light transition-colors"
                 >
-                  Create Profile
+                  {t('nav.createProfile')}
                 </Link>
               </div>
             )}
@@ -284,21 +305,35 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                               : 'text-white/70 hover:text-white hover:bg-white/5'
                           }`}
                         >
-                          My Connections
+                          {t('nav.connections')}
                         </Link>
                       </SheetClose>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-dark-border">
                       <p className="px-4 text-xs font-medium text-white/40 uppercase tracking-wider mb-2">
-                        Language
+                        {t('nav.language')}
                       </p>
                       <div className="flex items-center gap-2 px-4">
-                        <button className="px-4 py-2 rounded-full text-xs font-medium bg-gold text-dark-bg">
-                          English
+                        <button 
+                          onClick={() => changeLanguage('en')}
+                          className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                            i18n.language === 'en'
+                              ? 'bg-gold text-dark-bg'
+                              : 'bg-dark-surface text-white/60 border border-dark-border hover:text-white'
+                          }`}
+                        >
+                          {t('common.english')}
                         </button>
-                        <button className="px-4 py-2 rounded-full text-xs font-medium bg-dark-surface text-white/60 border border-dark-border">
-                          සිංහල
+                        <button 
+                          onClick={() => changeLanguage('si')}
+                          className={`px-4 py-2 rounded-full text-xs font-medium transition-all ${
+                            i18n.language === 'si'
+                              ? 'bg-gold text-dark-bg'
+                              : 'bg-dark-surface text-white/60 border border-dark-border hover:text-white'
+                          }`}
+                        >
+                          {t('common.sinhala')}
                         </button>
                       </div>
                     </div>
@@ -316,7 +351,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                           className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors"
                         >
                           <LogOut className="w-4 h-4" />
-                          <span className="text-sm font-medium">Sign Out</span>
+                          <span className="text-sm font-medium">{t('nav.signOut')}</span>
                         </button>
                       </SheetClose>
                     ) : (
@@ -325,7 +360,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                           to="/profile-creation"
                           className="block w-full text-center px-4 py-3 rounded-xl bg-gold text-dark-bg font-semibold text-sm hover:bg-gold-light transition-colors"
                         >
-                          Create Your Profile
+                          {t('nav.createYourProfile')}
                         </Link>
                       </SheetClose>
                     )}

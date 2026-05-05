@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageCircle,
@@ -92,13 +93,14 @@ const chatMessages = [
 ]
 
 export default function MessagesPage() {
+  const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<'messages' | 'received' | 'sent'>('messages')
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
 
   const tabs = [
-    { key: 'messages' as const, label: 'Messages', icon: MessageCircle },
-    { key: 'received' as const, label: 'Received', icon: Heart },
-    { key: 'sent' as const, label: 'Sent', icon: Send },
+    { key: 'messages' as const, label: t('messages.tabs.messages'), icon: MessageCircle },
+    { key: 'received' as const, label: t('messages.tabs.received'), icon: Heart },
+    { key: 'sent' as const, label: t('messages.tabs.sent'), icon: Send },
   ]
 
   return (
@@ -106,9 +108,9 @@ export default function MessagesPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-semibold mb-2">My Connections</h1>
+          <h1 className="text-3xl font-semibold mb-2">{t('messages.title')}</h1>
           <p className="text-muted-foreground">
-            Manage your interests and conversations
+            {t('messages.subtitle')}
           </p>
         </div>
 
@@ -149,7 +151,7 @@ export default function MessagesPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <input
                       type="text"
-                      placeholder="Search conversations..."
+                      placeholder={t('messages.searchConversations')}
                       className="w-full pl-9 pr-4 py-2 rounded-lg bg-light-bg border border-light-border text-sm focus:outline-none focus:border-gold transition-colors"
                     />
                   </div>
@@ -210,7 +212,7 @@ export default function MessagesPage() {
                         <span className="font-medium text-sm">Dilini P.</span>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Shield className="w-3 h-3" />
-                          Verified Account
+                          {t('messages.verifiedAccount')}
                         </div>
                       </div>
                     </div>
@@ -219,7 +221,7 @@ export default function MessagesPage() {
                     <div className="px-4 py-2 bg-blue-50 text-center">
                       <p className="text-xs text-blue-600 flex items-center justify-center gap-1">
                         <Shield className="w-3 h-3" />
-                        Your messages are end-to-end encrypted
+                        {t('messages.encrypted')}
                       </p>
                     </div>
 
@@ -251,7 +253,7 @@ export default function MessagesPage() {
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="Type a message..."
+                          placeholder={t('messages.typeMessage')}
                           className="flex-1 px-4 py-2.5 rounded-xl bg-light-bg border border-light-border text-sm focus:outline-none focus:border-gold transition-colors"
                         />
                         <button className="px-4 py-2.5 rounded-xl bg-gold text-dark-bg font-medium text-sm hover:bg-gold-light transition-colors">
@@ -263,9 +265,9 @@ export default function MessagesPage() {
                 ) : (
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
                     <MessageCircle className="w-16 h-16 text-light-border mb-4" />
-                    <h3 className="font-semibold text-lg mb-2">Select a Conversation</h3>
+                    <h3 className="font-semibold text-lg mb-2">{t('messages.selectConversation')}</h3>
                     <p className="text-sm text-muted-foreground max-w-xs">
-                      Choose a conversation from the list to start messaging
+                      {t('messages.selectConversationSubtitle')}
                     </p>
                   </div>
                 )}
@@ -298,17 +300,17 @@ export default function MessagesPage() {
                         {interest.age} years • {interest.location}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Interested {interest.time}
+                        {t('messages.interested', { time: interest.time })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                       <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gold text-dark-bg font-semibold text-sm hover:bg-gold-light transition-colors">
                         <Check className="w-4 h-4" />
-                        Accept
+                        {t('messages.accept')}
                       </button>
                       <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-light-border text-muted-foreground font-medium text-sm hover:bg-light-bg transition-colors">
                         <X className="w-4 h-4" />
-                        Decline
+                        {t('messages.decline')}
                       </button>
                     </div>
                   </div>
@@ -316,9 +318,9 @@ export default function MessagesPage() {
               ) : (
                 <div className="text-center py-16">
                   <Heart className="w-16 h-16 text-light-border mx-auto mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">No Received Interests</h3>
+                  <h3 className="font-semibold text-lg mb-2">{t('messages.noReceivedTitle')}</h3>
                   <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    No received interests yet. Your perfect match is searching for you.
+                    {t('messages.noReceivedSubtitle')}
                   </p>
                 </div>
               )}
@@ -350,26 +352,26 @@ export default function MessagesPage() {
                         {interest.age} years • {interest.location}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Sent {interest.time}
+                        {t('messages.sent', { time: interest.time })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {interest.status === 'pending' && (
                         <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 text-xs font-medium">
                           <Clock className="w-3 h-3" />
-                          Pending
+                          {t('messages.pending')}
                         </span>
                       )}
                       {interest.status === 'accepted' && (
                         <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
                           <Check className="w-3 h-3" />
-                          Accepted
+                          {t('messages.accepted')}
                         </span>
                       )}
                       {interest.status === 'declined' && (
                         <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-medium">
                           <X className="w-3 h-3" />
-                          Declined
+                          {t('messages.declined')}
                         </span>
                       )}
                     </div>
@@ -378,9 +380,9 @@ export default function MessagesPage() {
               ) : (
                 <div className="text-center py-16">
                   <Send className="w-16 h-16 text-light-border mx-auto mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">No Sent Interests</h3>
+                  <h3 className="font-semibold text-lg mb-2">{t('messages.noSentTitle')}</h3>
                   <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    You have not sent any interests yet. Start browsing profiles.
+                    {t('messages.noSentSubtitle')}
                   </p>
                 </div>
               )}
