@@ -24,60 +24,60 @@ export default function PricingCard({
 
   return (
     <div
-      className={`relative rounded-xl p-6 transition-all duration-300 hover:-translate-y-2 ${
+      className={`relative rounded-3xl p-8 transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between ${
         featured
-          ? 'bg-white border-2 border-gold shadow-gold scale-100 md:scale-105 z-10'
-          : 'bg-white border border-light-border shadow-md hover:shadow-gold'
+          ? 'bg-[#FFFFFF] border-2 border-[#D4A72C] shadow-gold-lg scale-100 md:scale-105 z-10'
+          : 'bg-[#FAF7F0] border border-[#EEE6D8] shadow-card hover:shadow-xl'
       }`}
     >
       {/* Featured Badge */}
       {featured && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gold text-dark-bg text-xs font-bold shadow-md">
+        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+          <div className="flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-[#F3D77A] to-[#D4A72C] text-[#241A17] text-xs font-bold shadow-md">
             <Crown className="w-3.5 h-3.5" />
             {t('pricingCard.mostPopular')}
           </div>
         </div>
       )}
 
-      <div className="pt-2">
+      <div>
         {/* Plan Name */}
-        <h3 className="text-lg font-semibold text-foreground mb-1">{name}</h3>
-        <p className="text-sm text-muted-foreground mb-4">{duration}</p>
+        <h3 className="font-serif text-2xl font-bold text-[#241A17] mb-1">{name}</h3>
+        <p className="text-xs text-[#241A17]/60 font-medium mb-4">{duration}</p>
 
         {/* Price */}
-        <div className="mb-4">
-          <span className="text-3xl font-bold text-foreground">{price}</span>
-          <span className="text-sm text-muted-foreground"> {t('pricingCard.perMonth')}</span>
+        <div className="mb-2">
+          <span className="font-serif text-3xl font-extrabold text-[#241A17]">{price}</span>
+          <span className="text-xs text-[#241A17]/60 font-medium"> {t('pricingCard.perMonth')}</span>
         </div>
-        <p className="text-sm font-medium text-gold mb-6">{total}</p>
+        <p className="text-xs font-bold text-[#996F16] mb-6">{total}</p>
 
         {/* Divider */}
-        <div className="h-px bg-light-border mb-6" />
+        <div className="h-px bg-[#EEE6D8] mb-6" />
 
         {/* Features */}
         <ul className="space-y-3 mb-6">
           {features.map((feature, index) => (
             <li key={index} className="flex items-start gap-2.5">
-              <div className="w-5 h-5 rounded-full bg-gold/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3 h-3 text-gold" />
+              <div className="w-4 h-4 rounded-full bg-[#D4A72C]/20 flex items-center justify-center shrink-0 mt-0.5">
+                <Check className="w-2.5 h-2.5 text-[#996F16]" />
               </div>
-              <span className="text-sm text-muted-foreground">{feature}</span>
+              <span className="text-xs sm:text-sm text-[#241A17]/80">{feature}</span>
             </li>
           ))}
         </ul>
-
-        {/* CTA */}
-        <button
-          className={`w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-            featured
-              ? 'bg-gold text-dark-bg hover:bg-gold-dark hover:shadow-gold-lg'
-              : 'border-2 border-gold text-gold hover:bg-gold hover:text-dark-bg'
-          }`}
-        >
-          {ctaText ?? t('pricingCard.subscribeNow')}
-        </button>
       </div>
+
+      {/* CTA */}
+      <button
+        className={`w-full py-3.5 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-200 shadow-sm ${
+          featured
+            ? 'btn-gold shadow-gold hover:shadow-gold-lg'
+            : 'bg-[#241A17] text-[#FAF7F0] hover:bg-[#33221D]'
+        }`}
+      >
+        {ctaText ?? t('pricingCard.subscribeNow')}
+      </button>
     </div>
   )
 }

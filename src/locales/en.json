@@ -2,6 +2,8 @@
   "nav": {
     "home": "Home",
     "search": "Search",
+    "howItWorks": "How It Works",
+    "successStories": "Success Stories",
     "pricing": "Pricing",
     "profile": "Profile",
     "messages": "Messages",
@@ -21,7 +23,8 @@
     "createYourProfile": "Create Your Profile",
     "viewMyProfile": "View My Profile",
     "language": "Language",
-    "brandTagline": "Two Hearts, One Journey"
+    "brandTagline": "Two Hearts, One Journey",
+    "matches": "Matches"
   },
   "common": {
     "loading": "Loading...",
@@ -53,8 +56,8 @@
     "latestFirst": "Latest First",
     "filters": "Filters",
     "iLookingFor": "I'm Looking For",
-    "male": "Male",
-    "female": "Female",
+    "male": "Bride (Female)",
+    "female": "Groom (Male)",
     "ageRange": "Age Range",
     "religion": "Religion",
     "ethnicity": "Ethnicity",
@@ -74,52 +77,105 @@
   "profileCard": {
     "photoVisibleAfterInterest": "Photo visible after mutual interest",
     "premium": "Premium",
-    "viewDetails": "View Details",
+    "viewDetails": "View Profile",
     "years": "years"
   },
   "home": {
     "heroTitlePrefix": "Find Your",
     "heroTitleHighlight": "Perfect Match",
-    "heroSubtitle": "Sri Lanka's most trusted, privacy-focused matrimonial platform. Where two hearts begin one journey.",
+    "heroSubtitle": "Where two hearts meet, families connect, and one beautiful journey begins.",
     "createYourProfile": "Create Your Profile",
-    "searchProfiles": "Search Profiles",
+    "exploreMatches": "Explore Matches",
+    "searchProfiles": "Explore Matches",
     "verifiedProfiles": "Verified Profiles",
     "privacyProtected": "Privacy Protected",
-    "successStories": "5000+ Success Stories",
-    "privacyPromiseTitle": "Your Privacy, Our Promise",
-    "privacyPromiseSubtitle": "We understand the importance of discretion in Sri Lankan culture. Your information is safe with us.",
-    "trust": {
+    "trustedCommunity": "Trusted Community",
+    "successStories": "1,000+ Happy Marriages",
+    "searchSection": {
+      "title": "Find Someone Who Complements You",
+      "subtitle": "Discover genuine connections based on compatibility, values and life goals.",
+      "lookingFor": "Looking For",
+      "bride": "Bride",
+      "groom": "Groom",
+      "ageRange": "Age",
+      "district": "District",
+      "religion": "Religion",
+      "education": "Education",
+      "profession": "Profession",
+      "maritalStatus": "Marital Status",
+      "searchBtn": "Search Profiles"
+    },
+    "trustSection": {
+      "heading": "Built Around Trust",
+      "subtitle": "Dignity, confidentiality, and family values at the center of every connection.",
+      "verifiedProfilesTitle": "Verified Profiles",
+      "verifiedProfilesDesc": "Every member is manually reviewed with official ID validation to guarantee genuine intentions.",
       "privacyFirstTitle": "Privacy First",
-      "privacyFirstDesc": "Your identity is only shared with profiles you approve. You are always in control.",
-      "verifiedAccountsTitle": "Verified Accounts",
-      "verifiedAccountsDesc": "Every profile is manually reviewed and verified for authenticity.",
+      "privacyFirstDesc": "Full photos and sensitive information are only revealed after mutual consent and approval.",
       "genuineConnectionsTitle": "Genuine Connections",
-      "genuineConnectionsDesc": "We attract serious seekers, making your search efficient and meaningful."
+      "genuineConnectionsDesc": "A respectful environment connecting serious marriage seekers and their families.",
+      "familyFriendlyTitle": "Family Friendly",
+      "familyFriendlyDesc": "Designed thoughtfully to honor Sri Lankan cultural heritage, traditions, and family harmony."
     },
-    "steps": {
-      "title": "Begin Your Journey in 4 Steps",
-      "subtitle": "Our guided process makes finding your life partner simple and respectful",
-      "createProfileTitle": "Create Profile",
-      "createProfileDesc": "Fill your details in our guided profile builder",
-      "discoverMatchesTitle": "Discover Matches",
-      "discoverMatchesDesc": "Browse verified profiles with advanced filters",
-      "showInterestTitle": "Show Interest",
-      "showInterestDesc": "Express interest in profiles that resonate with you",
-      "connectTitle": "Connect",
-      "connectDesc": "Once mutual interest is established, start your journey"
+    "statistics": {
+      "stat1": "5,000+",
+      "stat1Label": "Registered Members",
+      "stat2": "2,500+",
+      "stat2Label": "Verified Profiles",
+      "stat3": "1,000+",
+      "stat3Label": "Successful Connections",
+      "stat4": "100%",
+      "stat4Label": "Privacy Focused"
     },
-    "recentlyJoined": "Recently Joined",
-    "recentlyJoinedSubtitle": "New members looking for their perfect match",
-    "viewAll": "View All",
-    "viewAllProfiles": "View All Profiles",
-    "storiesTitle": "Stories of Two Hearts",
-    "storiesSubtitle": "Real stories from couples who found each other through Dehadak",
-    "choosePlanTitle": "Choose Your Plan",
-    "choosePlanSubtitle": "Simple, transparent pricing. Invest in finding your life partner.",
-    "viewFullPricing": "View Full Pricing Details",
-    "ctaTitle": "Ready to Find Your Partner?",
-    "ctaSubtitle": "Join thousands of Sri Lankans who have found their perfect match through Dehadak.",
-    "ctaButton": "Get Started - It's Free to Browse"
+    "howItWorks": {
+      "heading": "Your Journey Starts Here",
+      "subtitle": "Four simple, dignified steps to discovering the one who completes your life story.",
+      "step1Title": "Create Your Profile",
+      "step1Desc": "Build your verified profile highlighting your values, education, profession, and family background.",
+      "step2Title": "Discover Compatible Matches",
+      "step2Desc": "Filter through authentic profiles curated by culture, education, lifestyle, and horoscope alignment.",
+      "step3Title": "Connect With Confidence",
+      "step3Desc": "Send discreet interest requests. Exchange photos and contact info only when both parties agree.",
+      "step4Title": "Begin Your Journey",
+      "step4Desc": "Engage meaningful conversations with family blessings and begin a beautiful, lifelong companionship."
+    },
+    "featured": {
+      "heading": "Featured Matches",
+      "subtitle": "Recently active and verified members looking for their lifelong soulmate.",
+      "viewAll": "View All Profiles"
+    },
+    "testimonials": {
+      "heading": "Real Stories. Real Connections.",
+      "subtitle": "Celebrate the inspiring unions of Sri Lankan couples who found true love on Dehadak."
+    },
+    "pricingSection": {
+      "heading": "Transparent & Dignified Plans",
+      "subtitle": "Invest in a lifetime of love with flexible, value-driven membership plans.",
+      "freePlan": "Free",
+      "freePlanDesc": "Essential access for discovering verified matrimonial matches.",
+      "premiumPlan": "Premium",
+      "premiumPlanDesc": "Our most popular membership for serious seekers wanting priority matching.",
+      "premiumPlusPlan": "Premium Plus",
+      "premiumPlusPlanDesc": "VIP bespoke experience with dedicated support and utmost privacy."
+    },
+    "privacySection": {
+      "heading": "Your Privacy Comes First",
+      "subtitle": "Advanced safeguards ensure your identity remains in your hands at all times.",
+      "item1Title": "Discreet Profile Visibility",
+      "item1Desc": "Control exactly who sees your profile, photographs, and contact details with customized permissions.",
+      "item2Title": "Horoscope & Astrological Security",
+      "item2Desc": "Sensitive birth data is securely stored and only exchanged with profiles you mutually confirm.",
+      "item3Title": "Zero Contact Leakage",
+      "item3Desc": "Direct contact numbers are protected behind mutual acceptance and authenticated verification.",
+      "item4Title": "Dedicated Moderation",
+      "item4Desc": "24/7 proactive security monitoring to promptly filter spam, fake profiles, and inappropriate behavior."
+    },
+    "finalCTA": {
+      "heading": "Your Story Could Begin Today.",
+      "subtitle": "Create your profile and take the first step toward a meaningful, lifelong connection.",
+      "createProfile": "Create Your Profile",
+      "exploreMatches": "Explore Matches"
+    }
   },
   "pricingCard": {
     "mostPopular": "Most Popular",
@@ -187,7 +243,7 @@
     "saveContinue": "Save & Continue"
   },
   "footer": {
-    "description": "Sri Lanka's most trusted matrimonial platform. Connecting hearts with privacy, authenticity, and cultural values.",
+    "description": "Sri Lanka's most trusted, luxury matrimonial platform. Connecting hearts with privacy, authenticity, and cultural values.",
     "quickLinks": "Quick Links",
     "searchProfiles": "Search Profiles",
     "pricingPlans": "Pricing Plans",
@@ -197,6 +253,6 @@
     "termsOfService": "Terms of Service",
     "safetyGuidelines": "Safety Guidelines",
     "contactUs": "Contact Us",
-    "copyright": "© 2025 Dehadak.lk - Two Hearts, One Journey"
+    "copyright": "© 2026 Dehadak. All rights reserved. Two Hearts, One Journey."
   }
 }

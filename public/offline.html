@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>You're Offline – Dehadak</title>
+  <style>
+    :root {
+      --bg: #FAF6F0;
+      --espresso: #1C1412;
+      --card-bg: #FFFFFF;
+      --gold: #E5A93C;
+      --gold-dark: #9B6B15;
+      --gold-light: #F7D878;
+      --text-muted: #5C4B47;
+      --border: rgba(229, 169, 60, 0.25);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Plus Jakarta Sans", "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--espresso);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .offline-card {
+      background: var(--card-bg);
+      max-width: 460px;
+      width: 100%;
+      padding: 40px 32px;
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px -15px rgba(28, 20, 18, 0.08), 0 0 0 1px rgba(229, 169, 60, 0.1);
+    }
+    .logo-badge {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      background: #1C1412;
+      border: 2px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(229, 169, 60, 0.2);
+    }
+    .logo-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .wifi-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(229, 169, 60, 0.12);
+      border: 1px solid rgba(229, 169, 60, 0.3);
+      color: var(--gold-dark);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: Georgia, serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--espresso);
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 24px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1C1412;
+      background: linear-gradient(135deg, #F7D878 0%, #E5A93C 50%, #D49826 100%);
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(229, 169, 60, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-retry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(229, 169, 60, 0.4);
+    }
+    .btn-retry:active {
+      transform: translateY(0);
+    }
+    .brand-sub {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #8C7B76;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="logo-badge">
+      <img src="/logo.png" alt="Dehadak Logo">
+    </div>
+    <div class="wifi-icon">
+      ⚡ Offline Mode
+    </div>
+    <h1>You're Offline</h1>
+    <p>
+      Dehadak needs an active internet connection to securely access genuine profiles, messages, and verified matchmaking.
+    </p>
+    <button class="btn-retry" onclick="window.location.reload()">
+      Try Again
+    </button>
+    <div class="brand-sub">
+      Dehadak – Two Hearts, One Journey
+    </div>
+  </div>
+</body>
+</html>

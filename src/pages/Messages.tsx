@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate, useLocation, Link } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   MessageCircle,
@@ -11,97 +12,318 @@ import {
   ChevronRight,
   Search,
   Shield,
+  ExternalLink,
 } from 'lucide-react'
+import { API_BASE_URL } from '@/config'
 
 interface Interest {
   id: number
   name: string
   age: number
   location: string
+  profession?: string
+  religion?: string
   image: string
   time: string
   status: 'pending' | 'accepted' | 'declined'
+  profileId?: number
+  conversationId?: number
 }
 
-const receivedInterests: Interest[] = [
-  {
-    id: 1,
-    name: 'Dilini P.',
-    age: 28,
-    location: 'Kandy',
-    image: '/profile-female-1.jpg',
-    time: '2 hours ago',
-    status: 'pending',
-  },
-  {
-    id: 2,
-    name: 'Nadeesha W.',
-    age: 26,
-    location: 'Galle',
-    image: '/profile-female-2.jpg',
-    time: '1 day ago',
-    status: 'pending',
-  },
-]
+interface MessagesPageProps {
+  defaultTab?: "messages" | "received" | "sent"
+}
 
-const sentInterests: Interest[] = [
-  {
-    id: 3,
-    name: 'Rukmal S.',
-    age: 31,
-    location: 'Digana',
-    image: '/profile-male-1.jpg',
-    time: '3 hours ago',
-    status: 'pending',
-  },
-  {
-    id: 4,
-    name: 'Isuri K.',
-    age: 27,
-    location: 'Kurunegala',
-    image: '/profile-female-3.jpg',
-    time: '2 days ago',
-    status: 'accepted',
-  },
-]
-
-const conversations = [
-  {
-    id: 1,
-    name: 'Dilini P.',
-    lastMessage: 'Thank you for your interest. I would love to know more about you.',
-    time: '10 min ago',
-    unread: 2,
-    image: '/profile-female-1.jpg',
-  },
-  {
-    id: 2,
-    name: 'Isuri K.',
-    lastMessage: 'My family is also from Kurunegala! What a coincidence.',
-    time: '2 hours ago',
-    unread: 0,
-    image: '/profile-female-3.jpg',
-  },
-]
-
-const chatMessages = [
-  { id: 1, from: 'them', text: 'Hello! I noticed your profile and wanted to reach out.', time: '10:30 AM' },
-  { id: 2, from: 'me', text: 'Hi! Thank you for showing interest. I am glad to connect.', time: '10:32 AM' },
-  { id: 3, from: 'them', text: 'I read that you are an engineer in Colombo. I am also in the IT field.', time: '10:35 AM' },
-  { id: 4, from: 'me', text: 'That is wonderful! Where do you work if you do not mind me asking?', time: '10:38 AM' },
-  { id: 5, from: 'them', text: 'I work at a software company in Kandy. I have been there for 3 years now.', time: '10:40 AM' },
-]
-
-export default function MessagesPage() {
+export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
   const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<'messages' | 'received' | 'sent'>('messages')
+  const navigate = useNavigate()
+  const location = useLocation()
+
+  const getTargetTab = (): 'messages' | 'received' | 'sent' => {
+    if (defaultTab) return defaultTab
+    if (location.pathname.startsWith('/matches')) return 'received'
+    const searchParams = new URLSearchParams(location.search)
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'received' || tabParam === 'sent' || tabParam === 'messages') {
+      return tabParam
+    }
+    return 'messages'
+  }
+
+  const [activeTab, setActiveTab] = useState<'messages' | 'received' | 'sent'>(getTargetTab)
+
+  useEffect(() => {
+    const target = getTargetTab()
+    if (target !== activeTab) {
+      setActiveTab(target)
+    }
+  }, [defaultTab, location.pathname, location.search])
   const [selectedChat, setSelectedChat] = useState<number | null>(null)
+
+  const [conversations, setConversations] = useState<any[]>([])
+  const [chatMessages, setChatMessages] = useState<any[]>([])
+  const [receivedInterests, setReceivedInterests] = useState<Interest[]>([])
+  const [sentInterests, setSentInterests] = useState<Interest[]>([])
+  const [newMessage, setNewMessage] = useState('')
+  const [showGuestPrompt, setShowGuestPrompt] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    fetchData()
+  }, [activeTab])
+
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat)
+    }
+  }, [selectedChat])
+
+  const getHeaders = () => {
+    const token = localStorage.getItem('dehadak_auth')
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    }
+  }
+
+  const getToken = () => localStorage.getItem('dehadak_auth')
+
+  const decodeUserId = (token: string) => {
+    try {
+      const payload = token.split('.')[1]
+      const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')
+      const json = atob(base64)
+      const parsed = JSON.parse(json)
+      return Number(parsed.id)
+    } catch {
+      return null
+    }
+  }
+
+  const formatTimeAgo = (value?: string) => {
+    if (!value) return 'Recently'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return 'Recently'
+
+    const difference = Date.now() - date.getTime()
+    const minutes = Math.floor(difference / 60000)
+    const hours = Math.floor(difference / 3600000)
+    const days = Math.floor(difference / 86400000)
+
+    if (minutes < 1) return 'Just now'
+    if (minutes < 60) return `${minutes} min ago`
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`
+    return `${days} day${days === 1 ? '' : 's'} ago`
+  }
+
+  const fetchData = async () => {
+    try {
+      const token = getToken()
+      if (!token) {
+        setShowGuestPrompt(true)
+        setConversations([])
+        setReceivedInterests([])
+        setSentInterests([])
+        setChatMessages([])
+        return
+      }
+
+      setShowGuestPrompt(false)
+      setIsLoading(true)
+      setErrorMessage('')
+
+      if (activeTab === 'messages') {
+        const res = await fetch(`${API_BASE_URL}/api/messages/conversations`, { headers: getHeaders() })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.conversations && data.conversations.length > 0) {
+            setConversations(data.conversations.map((c: any) => {
+              const isMale = String(c.gender || '').toLowerCase() === 'male' || String(c.gender || '').toLowerCase() === 'groom'
+              return {
+                id: c.id,
+                name: c.name || 'Verified Member',
+                lastMessage: c.last_message || 'Conversation started',
+                time: formatTimeAgo(c.last_message_at || c.created_at),
+                unread: Number(c.unread_count || 0),
+                image: c.photo || (isMale ? '/profile-male-1.jpg' : '/profile-female-1.jpg'),
+                otherUserId: c.other_user_id,
+              }
+            }))
+          } else {
+            setConversations([])
+          }
+        }
+      } else if (activeTab === 'received') {
+        const res = await fetch(`${API_BASE_URL}/api/interests/received`, { headers: getHeaders() })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.interests && data.interests.length > 0) {
+            setReceivedInterests(data.interests.map((i: any) => {
+              const isMale = String(i.gender || '').toLowerCase() === 'male' || String(i.gender || '').toLowerCase() === 'groom'
+              return {
+                id: i.id,
+                profileId: i.profile_id,
+                name: `${i.first_name || ''} ${i.last_name || ''}`.trim() || 'Verified Member',
+                age: Number(new Date().getFullYear() - Number(i.birth_year || (new Date().getFullYear() - 26))),
+                location: [i.district, i.city, i.country].filter(Boolean).join(', ') || 'Sri Lanka',
+                profession: i.profession || 'Professional',
+                religion: i.religion || 'Buddhist',
+                image: i.photo || (isMale ? '/profile-male-1.jpg' : '/profile-female-1.jpg'),
+                time: formatTimeAgo(i.created_at),
+                status: i.status,
+              }
+            }))
+          } else {
+            setReceivedInterests([])
+          }
+        }
+      } else if (activeTab === 'sent') {
+        const res = await fetch(`${API_BASE_URL}/api/interests/sent`, { headers: getHeaders() })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.interests && data.interests.length > 0) {
+            setSentInterests(data.interests.map((i: any) => {
+              const isMale = String(i.gender || '').toLowerCase() === 'male' || String(i.gender || '').toLowerCase() === 'groom'
+              return {
+                id: i.id,
+                profileId: i.profile_id,
+                name: `${i.first_name || ''} ${i.last_name || ''}`.trim() || 'Verified Member',
+                age: Number(new Date().getFullYear() - Number(i.birth_year || (new Date().getFullYear() - 26))),
+                location: [i.district, i.city, i.country].filter(Boolean).join(', ') || 'Sri Lanka',
+                profession: i.profession || 'Professional',
+                religion: i.religion || 'Buddhist',
+                image: i.photo || (isMale ? '/profile-male-2.jpg' : '/profile-female-2.jpg'),
+                time: formatTimeAgo(i.created_at),
+                status: i.status,
+              }
+            }))
+          } else {
+            setSentInterests([])
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err)
+      setErrorMessage('Unable to load your connections.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleAcceptRequest = async (interestId: number) => {
+    const token = getToken()
+    if (!token) {
+      setShowGuestPrompt(true)
+      return
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/interests/${interestId}/accept`, {
+      method: 'PUT',
+      headers: getHeaders(),
+    })
+
+    if (response.ok) {
+      await fetchData()
+      return
+    }
+
+    const data = await response.json().catch(() => ({}))
+    setErrorMessage(data.error || 'Unable to accept request')
+  }
+
+  const handleDeclineRequest = async (interestId: number) => {
+    const token = getToken()
+    if (!token) {
+      setShowGuestPrompt(true)
+      return
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/interests/${interestId}/decline`, {
+      method: 'PUT',
+      headers: getHeaders(),
+    })
+
+    if (response.ok) {
+      await fetchData()
+      return
+    }
+
+    const data = await response.json().catch(() => ({}))
+    setErrorMessage(data.error || 'Unable to decline request')
+  }
+
+  const fetchMessages = async (id: number) => {
+    try {
+      const token = getToken()
+      if (!token) {
+        setShowGuestPrompt(true)
+        return
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/messages/conversations/${id}`, { headers: getHeaders() })
+      if (res.ok) {
+        setConversations((current) =>
+          current.map((c) => (c.id === id ? { ...c, unread: 0 } : c))
+        )
+        const data = await res.json()
+        if (data.messages && data.messages.length > 0) {
+          const myId = decodeUserId(token)
+          
+          setChatMessages(data.messages.map((m: any) => ({
+            id: m.id,
+            from: m.sender_id === myId ? 'me' : 'them',
+            text: m.body,
+            time: formatTimeAgo(m.created_at),
+          })))
+        } else {
+          setChatMessages([])
+        }
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setErrorMessage(data.error || 'Unable to load messages')
+      }
+    } catch (err) {
+      console.error(err)
+      setErrorMessage('Unable to load messages')
+    }
+  }
+
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedChat) return
+    try {
+      const token = getToken()
+      if (!token) {
+        setShowGuestPrompt(true)
+        return
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/messages/conversations/${selectedChat}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ body: newMessage })
+      })
+      if (res.ok) {
+        setNewMessage('')
+        fetchMessages(selectedChat)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setErrorMessage(data.error || 'Unable to send message')
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const tabs = [
     { key: 'messages' as const, label: t('messages.tabs.messages'), icon: MessageCircle },
     { key: 'received' as const, label: t('messages.tabs.received'), icon: Heart },
     { key: 'sent' as const, label: t('messages.tabs.sent'), icon: Send },
   ]
+
+  const unreadMessagesCount = conversations.reduce((acc, c) => acc + (c.unread || 0), 0)
+  const pendingInterestsCount = receivedInterests.filter((i) => i.status === 'pending').length
+  const activeConv = conversations.find((c) => c.id === selectedChat)
 
   return (
     <div className="min-h-screen bg-light-bg pt-[72px]">
@@ -112,27 +334,52 @@ export default function MessagesPage() {
           <p className="text-muted-foreground">
             {t('messages.subtitle')}
           </p>
+          {errorMessage && (
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errorMessage}
+            </div>
+          )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm border border-light-border mb-6 max-w-md">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => {
-                setActiveTab(tab.key)
-                setSelectedChat(null)
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === tab.key
-                  ? 'bg-gold text-dark-bg shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
+        {/* Tabs with Live Notification Badges */}
+        <div className="flex gap-1.5 bg-white rounded-2xl p-1.5 shadow-sm border border-[#EADFCF] mb-6 max-w-lg">
+          {tabs.map((tab) => {
+            const badgeCount =
+              tab.key === 'messages'
+                ? unreadMessagesCount
+                : tab.key === 'received'
+                  ? pendingInterestsCount
+                  : 0
+
+            return (
+              <button
+                key={tab.key}
+                onClick={() => {
+                  setActiveTab(tab.key)
+                  setSelectedChat(null)
+                }}
+                className={`flex-1 flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all relative ${
+                  activeTab === tab.key
+                    ? 'btn-gold shadow-sm'
+                    : 'text-[#1C1412]/70 hover:text-[#1C1412] hover:bg-[#FAF6F0]'
+                }`}
+              >
+                <tab.icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+                {badgeCount > 0 && (
+                  <span
+                    className={`ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      activeTab === tab.key
+                        ? 'bg-[#1C1412] text-[#F7D878]'
+                        : 'bg-rose-500 text-white animate-pulse'
+                    }`}
+                  >
+                    {badgeCount}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         <AnimatePresence mode="wait">
@@ -156,33 +403,39 @@ export default function MessagesPage() {
                     />
                   </div>
                 </div>
-                <div className="overflow-y-auto h-[calc(100%-65px)]">
+                <div className="overflow-y-auto h-[calc(100%-65px)] divide-y divide-[#EADFCF]/60">
                   {conversations.map((conv) => (
                     <button
                       key={conv.id}
                       onClick={() => setSelectedChat(conv.id)}
-                      className={`w-full flex items-center gap-3 p-4 hover:bg-light-bg transition-colors border-b border-light-border last:border-0 ${
-                        selectedChat === conv.id ? 'bg-gold/5' : ''
+                      className={`w-full flex items-center gap-3.5 p-4 hover:bg-[#FAF6F0] transition-colors text-left ${
+                        selectedChat === conv.id
+                          ? 'bg-[#E5A93C]/10 border-l-4 border-[#E5A93C]'
+                          : conv.unread > 0
+                            ? 'bg-rose-50/30'
+                            : ''
                       }`}
                     >
-                      <div className="relative">
+                      <div className="relative shrink-0">
                         <img
                           src={conv.image}
                           alt={conv.name}
-                          className="w-12 h-12 rounded-full object-cover"
+                          className="w-12 h-12 rounded-full object-cover border border-[#EADFCF]"
                         />
                         {conv.unread > 0 && (
-                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gold text-dark-bg text-xs font-bold flex items-center justify-center">
+                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse shadow-sm">
                             {conv.unread}
                           </span>
                         )}
                       </div>
-                      <div className="flex-1 text-left min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm">{conv.name}</span>
-                          <span className="text-xs text-muted-foreground">{conv.time}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className={`text-sm truncate ${conv.unread > 0 ? 'font-bold text-[#1C1412]' : 'font-semibold text-[#1C1412]/90'}`}>
+                            {conv.name}
+                          </span>
+                          <span className="text-[11px] text-gray-400 shrink-0">{conv.time}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        <p className={`text-xs truncate mt-0.5 ${conv.unread > 0 ? 'font-bold text-[#1C1412]' : 'text-gray-500'}`}>
                           {conv.lastMessage}
                         </p>
                       </div>
@@ -204,15 +457,15 @@ export default function MessagesPage() {
                         <ChevronRight className="w-5 h-5 rotate-180" />
                       </button>
                       <img
-                        src="/profile-female-1.jpg"
-                        alt="Chat"
-                        className="w-10 h-10 rounded-full object-cover"
+                        src={activeConv?.image || '/profile-female-1.jpg'}
+                        alt={activeConv?.name || 'Chat'}
+                        className="w-10 h-10 rounded-full object-cover border border-[#EADFCF]"
                       />
                       <div>
-                        <span className="font-medium text-sm">Dilini P.</span>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Shield className="w-3 h-3" />
-                          {t('messages.verifiedAccount')}
+                        <span className="font-bold text-sm text-[#1C1412]">{activeConv?.name || 'Verified Member'}</span>
+                        <div className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
+                          <Shield className="w-3.5 h-3.5" />
+                          <span>Mutual Connection</span>
                         </div>
                       </div>
                     </div>
@@ -220,7 +473,7 @@ export default function MessagesPage() {
                     {/* Encryption Notice */}
                     <div className="px-4 py-2 bg-blue-50 text-center">
                       <p className="text-xs text-blue-600 flex items-center justify-center gap-1">
-                        <Shield className="w-3 h-3" />
+                        <Shield className="w-3.5 h-3.5" />
                         {t('messages.encrypted')}
                       </p>
                     </div>
@@ -253,10 +506,16 @@ export default function MessagesPage() {
                       <div className="flex gap-2">
                         <input
                           type="text"
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                           placeholder={t('messages.typeMessage')}
                           className="flex-1 px-4 py-2.5 rounded-xl bg-light-bg border border-light-border text-sm focus:outline-none focus:border-gold transition-colors"
                         />
-                        <button className="px-4 py-2.5 rounded-xl bg-gold text-dark-bg font-medium text-sm hover:bg-gold-light transition-colors">
+                        <button 
+                          onClick={handleSendMessage}
+                          className="px-4 py-2.5 rounded-xl bg-gold text-dark-bg font-medium text-sm hover:bg-gold-light transition-colors"
+                        >
                           <Send className="w-4 h-4" />
                         </button>
                       </div>
@@ -287,40 +546,89 @@ export default function MessagesPage() {
                 receivedInterests.map((interest) => (
                   <div
                     key={interest.id}
-                    className="bg-white rounded-xl shadow-sm border border-light-border p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4"
+                    className="bg-white rounded-2xl shadow-card border border-[#EADFCF] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 hover:border-[#E5A93C]/40 transition-all"
                   >
-                    <img
-                      src={interest.image}
-                      alt={interest.name}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{interest.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {interest.age} years • {interest.location}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('messages.interested', { time: interest.time })}
-                      </p>
+                    <div className="flex items-start sm:items-center gap-4 flex-1">
+                      <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border-2 border-[#E5A93C]/30 shrink-0 bg-[#FAF6F0]">
+                        <img
+                          src={interest.image}
+                          alt={interest.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif text-lg font-bold text-[#1C1412]">{interest.name}</h3>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E5A93C]/15 text-[#9B6B15] border border-[#E5A93C]/30">
+                            Verified
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[#1C1412]/75 font-medium">
+                          {interest.age} years • {interest.location} • {interest.profession || 'Professional'}
+                        </p>
+                        <p className="text-xs text-[#1C1412]/50 font-sans">
+                          Received {interest.time}
+                        </p>
+                        {interest.profileId && (
+                          <Link
+                            to={`/search?profileId=${interest.profileId}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#9B6B15] hover:text-[#D4A72C] pt-1"
+                          >
+                            <span>View Full Profile</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gold text-dark-bg font-semibold text-sm hover:bg-gold-light transition-colors">
-                        <Check className="w-4 h-4" />
-                        {t('messages.accept')}
-                      </button>
-                      <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-light-border text-muted-foreground font-medium text-sm hover:bg-light-bg transition-colors">
-                        <X className="w-4 h-4" />
-                        {t('messages.decline')}
-                      </button>
+
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#EADFCF]">
+                      {interest.status === 'pending' ? (
+                        <>
+                          <button
+                            onClick={() => handleAcceptRequest(interest.id)}
+                            className="flex-1 sm:flex-none btn-gold px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-gold hover:shadow-gold-lg"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Accept Interest</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeclineRequest(interest.id)}
+                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs sm:text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                            <span>Decline</span>
+                          </button>
+                        </>
+                      ) : interest.status === 'accepted' ? (
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Accepted</span>
+                          </span>
+                          <button
+                            onClick={() => setActiveTab('messages')}
+                            className="btn-gold px-4 py-2 rounded-xl text-xs font-bold"
+                          >
+                            Open Chat
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
+                          <X className="w-3.5 h-3.5" />
+                          <span>Declined</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-16">
-                  <Heart className="w-16 h-16 text-light-border mx-auto mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">{t('messages.noReceivedTitle')}</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    {t('messages.noReceivedSubtitle')}
+                <div className="text-center py-16 bg-white rounded-3xl border border-[#EADFCF] shadow-sm">
+                  <div className="w-16 h-16 rounded-full bg-[#E5A93C]/15 border border-[#E5A93C]/30 flex items-center justify-center mx-auto mb-4">
+                    <Heart className="w-8 h-8 text-[#9B6B15]" />
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-[#1C1412] mb-1">No Interests Received Yet</h3>
+                  <p className="text-xs text-[#1C1412]/60 max-w-xs mx-auto">
+                    When verified members send you interest requests, they will appear here with options to accept and connect.
                   </p>
                 </div>
               )}
@@ -339,56 +647,125 @@ export default function MessagesPage() {
                 sentInterests.map((interest) => (
                   <div
                     key={interest.id}
-                    className="bg-white rounded-xl shadow-sm border border-light-border p-4 md:p-6 flex items-center gap-4"
+                    className="bg-white rounded-2xl shadow-card border border-[#EADFCF] p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 hover:border-[#E5A93C]/40 transition-all"
                   >
-                    <img
-                      src={interest.image}
-                      alt={interest.name}
-                      className="w-16 h-16 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{interest.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {interest.age} years • {interest.location}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t('messages.sent', { time: interest.time })}
-                      </p>
+                    <div className="flex items-start sm:items-center gap-4 flex-1">
+                      <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl overflow-hidden border-2 border-[#E5A93C]/30 shrink-0 bg-[#FAF6F0]">
+                        <img
+                          src={interest.image}
+                          alt={interest.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif text-lg font-bold text-[#1C1412]">{interest.name}</h3>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E5A93C]/15 text-[#9B6B15] border border-[#E5A93C]/30">
+                            Verified
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[#1C1412]/75 font-medium">
+                          {interest.age} years • {interest.location} • {interest.profession || 'Professional'}
+                        </p>
+                        <p className="text-xs text-[#1C1412]/50 font-sans">
+                          Sent {interest.time}
+                        </p>
+                        {interest.profileId && (
+                          <Link
+                            to={`/search?profileId=${interest.profileId}`}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-[#9B6B15] hover:text-[#D4A72C] pt-1"
+                          >
+                            <span>View Full Profile</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </Link>
+                        )}
+                      </div>
                     </div>
+
                     <div className="flex items-center gap-2">
                       {interest.status === 'pending' && (
-                        <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-50 text-amber-600 text-xs font-medium">
-                          <Clock className="w-3 h-3" />
-                          {t('messages.pending')}
+                        <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>Pending Response</span>
                         </span>
                       )}
                       {interest.status === 'accepted' && (
-                        <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-600 text-xs font-medium">
-                          <Check className="w-3 h-3" />
-                          {t('messages.accepted')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Accepted!</span>
+                          </span>
+                          <button
+                            onClick={() => setActiveTab('messages')}
+                            className="btn-gold px-4 py-2 rounded-xl text-xs font-bold"
+                          >
+                            Chat Now
+                          </button>
+                        </div>
                       )}
                       {interest.status === 'declined' && (
-                        <span className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-medium">
-                          <X className="w-3 h-3" />
-                          {t('messages.declined')}
+                        <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-semibold">
+                          <X className="w-3.5 h-3.5" />
+                          <span>Declined</span>
                         </span>
                       )}
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-16">
-                  <Send className="w-16 h-16 text-light-border mx-auto mb-4" />
-                  <h3 className="font-semibold text-lg mb-2">{t('messages.noSentTitle')}</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                    {t('messages.noSentSubtitle')}
+                <div className="text-center py-16 bg-white rounded-3xl border border-[#EADFCF] shadow-sm">
+                  <div className="w-16 h-16 rounded-full bg-[#E5A93C]/15 border border-[#E5A93C]/30 flex items-center justify-center mx-auto mb-4">
+                    <Send className="w-8 h-8 text-[#9B6B15]" />
+                  </div>
+                  <h3 className="font-serif text-xl font-bold text-[#1C1412] mb-1">No Sent Interests Yet</h3>
+                  <p className="text-xs text-[#1C1412]/60 max-w-xs mx-auto mb-4">
+                    Browse verified Sri Lankan proposals in search and send interest to start connecting.
                   </p>
+                  <Link
+                    to="/search"
+                    className="btn-gold px-6 py-2.5 rounded-full text-xs font-bold inline-block"
+                  >
+                    Find Proposals
+                  </Link>
                 </div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
+
+        {showGuestPrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-light-border">
+              <h3 className="text-xl font-semibold mb-2">Login required</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Guests can browse profiles, but requests and messages are available only after registration.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setShowGuestPrompt(false)
+                    navigate('/login')
+                  }}
+                  className="flex-1 rounded-xl bg-gold px-4 py-3 font-semibold text-dark-bg hover:bg-gold-light transition-colors"
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => {
+                    setShowGuestPrompt(false)
+                    navigate('/profile-creation')
+                  }}
+                  className="flex-1 rounded-xl border border-light-border px-4 py-3 font-semibold text-foreground hover:bg-light-bg transition-colors"
+                >
+                  Register
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {isLoading && (
+          <p className="mt-4 text-sm text-muted-foreground">Loading connections...</p>
+        )}
       </div>
     </div>
   )

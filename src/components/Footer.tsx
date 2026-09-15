@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Heart, Facebook, Instagram, Phone, Mail, MapPin } from 'lucide-react'
+import { Facebook, Instagram, Phone, Mail, MapPin } from 'lucide-react'
 
 export default function Footer() {
   const { t, i18n } = useTranslation()
@@ -11,142 +11,190 @@ export default function Footer() {
   }
 
   return (
-    <footer className="bg-dark-bg border-t border-dark-border">
+    <footer className="hidden md:block bg-[#1A1210] border-t border-[#D4A72C]/20 text-[#FAF7F0] relative overflow-hidden">
+      
+      {/* Subtle Top Golden Glow Line */}
+      <div className="h-1 bg-gradient-to-r from-transparent via-[#D4A72C] to-transparent opacity-40" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Brand */}
-          <div className="lg:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Heart className="w-6 h-6 text-gold" fill="currentColor" />
-              <span className="text-xl font-semibold text-white">Dehadak</span>
-            </div>
-            <p className="text-sm text-white/50 mb-6 leading-relaxed">
+        
+        {/* Main Footer Grid */}
+        <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10">
+          
+          {/* Brand & About (5 cols) */}
+          <div className="lg:col-span-5 space-y-5">
+            <Link to="/" className="flex items-center gap-3 group w-fit">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#E5A93C]/60 shadow-gold group-hover:scale-105 group-hover:border-[#F7D878] transition-all bg-[#1C1412] flex items-center justify-center p-0.5">
+                <img
+                  src="/logo.png"
+                  alt="Dehadak Logo"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-serif text-2xl font-bold text-white tracking-wide group-hover:text-[#F7D878] transition-colors leading-tight">
+                  Dehadak
+                </span>
+                <span className="text-[10px] tracking-widest uppercase font-medium text-[#F7D878]/90 font-sans">
+                  {t('nav.brandTagline')}
+                </span>
+              </div>
+            </Link>
+
+            <p className="text-sm text-[#FAF7F0]/70 max-w-sm leading-relaxed font-sans">
               {t('footer.description')}
             </p>
-            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-3 pt-2">
               <a
                 href="#"
-                className="w-9 h-9 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center text-white/60 hover:text-gold hover:border-gold/50 transition-colors"
+                aria-label="Facebook"
+                className="w-10 h-10 rounded-full bg-black/40 border border-[#D4A72C]/25 flex items-center justify-center text-[#FAF7F0]/70 hover:text-[#F3D77A] hover:border-[#D4A72C] transition-all"
               >
                 <Facebook className="w-4 h-4" />
               </a>
               <a
                 href="#"
-                className="w-9 h-9 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center text-white/60 hover:text-gold hover:border-gold/50 transition-colors"
+                aria-label="Instagram"
+                className="w-10 h-10 rounded-full bg-black/40 border border-[#D4A72C]/25 flex items-center justify-center text-[#FAF7F0]/70 hover:text-[#F3D77A] hover:border-[#D4A72C] transition-all"
               >
                 <Instagram className="w-4 h-4" />
               </a>
               <a
-                href="#"
-                className="w-9 h-9 rounded-full bg-dark-surface border border-dark-border flex items-center justify-center text-white/60 hover:text-gold hover:border-gold/50 transition-colors"
+                href="https://wa.me/94761234567"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp"
+                className="w-10 h-10 rounded-full bg-black/40 border border-[#D4A72C]/25 flex items-center justify-center text-[#FAF7F0]/70 hover:text-[#10B981] hover:border-[#10B981] transition-all"
               >
                 <Phone className="w-4 h-4" />
               </a>
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+          {/* Quick Navigation (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#F3D77A]">
               {t('footer.quickLinks')}
             </h3>
-            <ul className="space-y-3">
-              {[
-                { label: t('nav.home'), path: '/' },
-                { label: t('footer.searchProfiles'), path: '/search' },
-                { label: t('footer.pricingPlans'), path: '/pricing' },
-                { label: t('footer.createProfile'), path: '/profile-creation' },
-              ].map((link) => (
-                <li key={link.path}>
-                  <Link
-                    to={link.path}
-                    className="text-sm text-white/50 hover:text-gold transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+            <ul className="space-y-2.5 text-sm font-medium">
+              <li>
+                <Link to="/" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('nav.home')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/search" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('nav.search')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/how-it-works" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('nav.howItWorks')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/success-stories" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('nav.successStories')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('nav.pricing')}
+                </Link>
+              </li>
+              <li>
+                <Link to="/app" className="text-[#F3D77A] hover:text-white transition-colors flex items-center gap-1.5 font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E5A93C]" />
+                  Dehadak App (PWA)
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Support */}
-          <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+          {/* Trust & Legal (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#F3D77A]">
               {t('footer.support')}
             </h3>
-            <ul className="space-y-3">
-              {[
-                t('nav.helpCenter'),
-                t('footer.privacyPolicy'),
-                t('footer.termsOfService'),
-                t('footer.safetyGuidelines'),
-              ].map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="text-sm text-white/50 hover:text-gold transition-colors"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+            <ul className="space-y-2.5 text-sm font-medium">
+              <li>
+                <a href="#" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('footer.privacyPolicy')}
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('footer.termsOfService')}
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('footer.safetyGuidelines')}
+                </a>
+              </li>
+              <li>
+                <Link to="/pricing#faq" className="text-[#FAF7F0]/70 hover:text-[#F3D77A] transition-colors">
+                  {t('nav.helpCenter')}
+                </Link>
+              </li>
             </ul>
           </div>
 
-          {/* Contact */}
-          <div>
-            <h3 className="text-sm font-semibold text-white uppercase tracking-wider mb-4">
+          {/* Contact Info (3 cols) */}
+          <div className="lg:col-span-3 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[#F3D77A]">
               {t('footer.contactUs')}
             </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3 text-sm text-[#FAF7F0]/75">
               <li className="flex items-start gap-3">
-                <Phone className="w-4 h-4 text-gold mt-0.5 shrink-0" />
-                <span className="text-sm text-white/50">+94 76 123 4567</span>
+                <Phone className="w-4 h-4 text-[#D4A72C] mt-0.5 shrink-0" />
+                <span>+94 76 123 4567 / +94 11 234 5678</span>
               </li>
               <li className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-gold mt-0.5 shrink-0" />
-                <span className="text-sm text-white/50">
-                  hello@dehadak.lk
-                </span>
+                <Mail className="w-4 h-4 text-[#D4A72C] mt-0.5 shrink-0" />
+                <span>support@dehadak.lk</span>
               </li>
               <li className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-gold mt-0.5 shrink-0" />
-                <span className="text-sm text-white/50">
-                  Colombo, Sri Lanka
-                </span>
+                <MapPin className="w-4 h-4 text-[#D4A72C] mt-0.5 shrink-0" />
+                <span>World Trade Center, Colombo 01, Sri Lanka</span>
               </li>
             </ul>
           </div>
+
         </div>
 
-        {/* Bottom Bar */}
-        <div className="py-6 border-t border-dark-border flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-white/40">
+        {/* Bottom Bar: Copyright & Language Switch */}
+        <div className="py-8 border-t border-[#D4A72C]/15 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-[#FAF7F0]/60 text-center sm:text-left">
             {t('footer.copyright')}
           </p>
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-[#FAF7F0]/50 mr-1">Language:</span>
             <button
               onClick={() => changeLanguage('en')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 i18n.language === 'en'
-                  ? 'bg-gold text-dark-bg'
-                  : 'bg-dark-surface text-white/50 border border-dark-border'
+                  ? 'bg-gradient-to-r from-[#F3D77A] to-[#D4A72C] text-[#241A17] shadow-sm'
+                  : 'bg-black/30 text-[#FAF7F0]/70 hover:text-white border border-[#D4A72C]/20'
               }`}
             >
-              {t('common.english')}
+              English
             </button>
             <button
               onClick={() => changeLanguage('si')}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+              className={`px-3 py-1 rounded-full text-xs font-bold transition-all ${
                 i18n.language === 'si'
-                  ? 'bg-gold text-dark-bg'
-                  : 'bg-dark-surface text-white/50 border border-dark-border'
+                  ? 'bg-gradient-to-r from-[#F3D77A] to-[#D4A72C] text-[#241A17] shadow-sm'
+                  : 'bg-black/30 text-[#FAF7F0]/70 hover:text-white border border-[#D4A72C]/20'
               }`}
             >
-              {t('common.sinhala')}
+              සිංහල
             </button>
           </div>
         </div>
+
       </div>
     </footer>
   )
