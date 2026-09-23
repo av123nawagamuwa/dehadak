@@ -6,11 +6,12 @@ import {
   Check,
   Clock,
   Lock,
-  User,
   SlidersHorizontal,
   ExternalLink,
   Loader2,
   AlertCircle,
+  MapPin,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,10 +34,12 @@ export interface NotificationItem {
   candidateAvailable: boolean;
   candidateName: string | null;
   candidateAge: number | null;
+  candidateLocation: string | null;
   candidateReligion: string | null;
   candidateCivilStatus: string | null;
   photoUrl: string | null;
   isPhotoPrivate: boolean;
+  isVerified: boolean;
   matchPercentage: number | null;
 }
 
@@ -244,29 +247,35 @@ export default function NotificationDropdown({ unreadCount, onRefreshSummary }: 
               </p>
             </div>
           ) : (
-            notifications.map((item) => (
-              <div
+            notifications.map((item) => {
+              const genderAvatar = item.candidateGender === 'female'
+                ? '/avatars/default-female.jpg'
+                : '/avatars/default-male.jpg';
+
+              const displayPhoto = (!item.isPhotoPrivate && item.photoUrl) ? item.photoUrl : genderAvatar;
+
+              return (
+                <div
                   key={item.id}
                   onClick={() => handleNotificationClick(item)}
                   className={`p-3 transition-colors cursor-pointer flex gap-3 items-start group hover:bg-white/5 ${
                     !item.isRead ? 'bg-[#D4A72C]/[0.08]' : ''
                   }`}
                 >
-                  {/* Avatar / Icon */}
+                  {/* Avatar / Icon with Photo Privacy indicator */}
                   <div className="relative shrink-0 mt-0.5">
-                    {item.photoUrl ? (
-                      <img
-                        src={item.photoUrl}
-                        alt={item.candidateName || 'Member'}
-                        className="w-10 h-10 rounded-full object-cover border border-[#D4A72C]/40 shadow-sm"
-                      />
-                    ) : item.isPhotoPrivate ? (
-                      <div className="w-10 h-10 rounded-full bg-[#1C1412] border border-[#D4A72C]/30 flex items-center justify-center text-[#F3D77A]">
-                        <Lock className="w-4 h-4 opacity-70" />
-                      </div>
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-[#D4A72C]/20 border border-[#D4A72C]/30 flex items-center justify-center text-[#F3D77A]">
-                        <User className="w-5 h-5" />
+                    <img
+                      src={displayPhoto}
+                      alt={item.candidateName || 'Member'}
+                      className="w-11 h-11 rounded-full object-cover border border-[#D4A72C]/40 shadow-sm bg-[#1C1412]"
+                    />
+
+                    {item.isPhotoPrivate && (
+                      <div
+                        title="Photo is privacy protected"
+                        className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-[#1C1412] border border-[#D4A72C] flex items-center justify-center text-[#F3D77A]"
+                      >
+                        <Lock className="w-2.5 h-2.5" />
                       </div>
                     )}
 
@@ -288,18 +297,37 @@ export default function NotificationDropdown({ unreadCount, onRefreshSummary }: 
                     </div>
 
                     {item.candidateAvailable ? (
-                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                        {item.candidateName && (
-                          <span className="text-[11px] font-semibold text-[#F3D77A]">
-                            {item.candidateName}
-                            {item.candidateAge ? `, ${item.candidateAge} yrs` : ''}
-                          </span>
-                        )}
+                      <div className="mt-1 space-y-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          {item.candidateName && (
+                            <span className="text-[11px] font-semibold text-[#F3D77A]">
+                              {item.candidateName}
+                              {item.candidateAge ? `, ${item.candidateAge}` : ''}
+                            </span>
+                          )}
 
-                        {item.matchPercentage !== null && (
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#D4A72C]/20 text-[#F3D77A] border border-[#D4A72C]/30">
-                            {item.matchPercentage}% Match
-                          </span>
+                          {item.isVerified && (
+                            <span
+                              title="NIC Verified"
+                              className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-500/40 flex items-center gap-0.5"
+                            >
+                              <CheckCircle2 className="w-2.5 h-2.5" />
+                              <span>Verified</span>
+                            </span>
+                          )}
+
+                          {item.matchPercentage !== null && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#D4A72C]/20 text-[#F3D77A] border border-[#D4A72C]/30">
+                              {item.matchPercentage}% Match
+                            </span>
+                          )}
+                        </div>
+
+                        {item.candidateLocation && (
+                          <div className="text-[10px] text-[#FAF7F0]/60 flex items-center gap-1">
+                            <MapPin className="w-2.5 h-2.5 text-[#D4A72C]/70" />
+                            <span>{item.candidateLocation}</span>
+                          </div>
                         )}
                       </div>
                     ) : (
@@ -327,8 +355,8 @@ export default function NotificationDropdown({ unreadCount, onRefreshSummary }: 
                     </div>
                   </div>
                 </div>
-              )
-            )
+              );
+            })
           )}
         </div>
 

@@ -8,27 +8,39 @@ self.addEventListener('push', (event) => {
       data = event.data.json();
     } catch (e) {
       data = {
-        title: 'Dehadak — New profile',
-        body: event.data.text() || 'A new profile is available. Open Dehadak to discover more.',
+        title: 'Dehadak.lk',
+        body: event.data.text() || 'A new compatible profile has joined. Tap to view safely.',
       };
     }
   }
 
-  const title = data.title || 'Dehadak — New profile';
+  const title = data.title || 'Dehadak.lk';
+  const targetUrl = data.url || (data.data && data.data.url) || '/notifications';
+  const notificationId = data.notificationId || (data.data && data.data.notificationId) || null;
+
   const options = {
-    body: data.body || 'A new profile is available. Open Dehadak to discover more.',
+    body: data.body || 'A new compatible profile has joined. Tap to view safely.',
     icon: data.icon || '/icons/icon-192x192.png',
     badge: data.badge || '/icons/icon-72x72.png',
     tag: data.tag || 'dehadak-new-profile',
-    renotify: true,
-    data: data.data || { url: '/search' },
+    renotify: Boolean(data.renotify),
+    data: {
+      url: targetUrl,
+      notificationId,
+      type: data.type || (data.data && data.data.type) || 'NEW_COMPATIBLE_PROFILE',
+    },
     actions: [
       {
-        action: 'open',
-        title: 'Open Dehadak',
+        action: 'view',
+        title: 'View Profile',
       },
     ],
   };
+
+  // Only attach rich image preview if provided in payload and permitted
+  if (data.image) {
+    options.image = data.image;
+  }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
@@ -36,9 +48,9 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = (event.notification.data && event.notification.data.url)
-    ? event.notification.data.url
-    : '/search';
+  const notifData = event.notification.data || {};
+  const targetUrl = notifData.url || '/notifications';
+  const notificationId = notifData.notificationId;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
@@ -47,13 +59,20 @@ self.addEventListener('notificationclick', (event) => {
         if (client.url && 'focus' in client) {
           client.focus();
           if ('navigate' in client) {
-            return client.navigate(targetUrl);
+            client.navigate(targetUrl);
+          }
+          if (notificationId && 'postMessage' in client) {
+            client.postMessage({
+              type: 'DEHADAK_NOTIFICATION_CLICKED',
+              notificationId,
+              targetUrl,
+            });
           }
           return client;
         }
       }
 
-      // 2. If no window is open, open a new window
+      // 2. If no window is open, open a new standalone PWA or browser window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

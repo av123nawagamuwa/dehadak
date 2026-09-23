@@ -20,6 +20,25 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 /**
+ * Checks if the device is running iOS (iPhone, iPad, iPod)
+ */
+export function isIos(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /iPhone|iPad|iPod/.test(navigator.userAgent);
+}
+
+/**
+ * Checks if the web app is running as an installed standalone PWA
+ */
+export function isStandalone(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    ('standalone' in window.navigator && Boolean((window.navigator as any).standalone)) ||
+    window.matchMedia('(display-mode: standalone)').matches
+  );
+}
+
+/**
  * Checks if the current browser environment supports Service Workers and Web Push.
  */
 export function isPushSupported(): boolean {
@@ -49,6 +68,14 @@ export async function subscribeUserToPush(token: string): Promise<{
   error?: string;
 }> {
   if (!isPushSupported()) {
+    // If on iOS browser and not installed as PWA:
+    if (isIos() && !isStandalone()) {
+      return {
+        success: false,
+        permission: 'unsupported',
+        error: 'On iPhone and iPad, please first tap the Share button and select "Add to Home Screen". Open the installed app from your Home Screen to enable push notifications.',
+      };
+    }
     return { success: false, permission: 'unsupported', error: 'Push notifications are not supported by this browser.' };
   }
 
@@ -59,7 +86,7 @@ export async function subscribeUserToPush(token: string): Promise<{
       success: false,
       permission,
       error: permission === 'denied'
-        ? 'Notification permission was denied. Please allow notifications in your browser settings.'
+        ? 'Notification permission was denied. Please allow notifications in your browser or system settings.'
         : 'Notification permission was not granted.',
     };
   }
@@ -87,6 +114,8 @@ export async function subscribeUserToPush(token: string): Promise<{
     }
 
     const subJson = subscription.toJSON();
+    const platform = isIos() ? 'iOS' : /Android/.test(navigator.userAgent) ? 'Android' : 'Desktop';
+    const deviceLabel = isStandalone() ? `${platform} PWA` : `${platform} Browser`;
 
     // 5. Send subscription to backend
     const saveRes = await fetch(`${API_BASE_URL}/api/notifications/push/subscribe`, {
@@ -99,6 +128,8 @@ export async function subscribeUserToPush(token: string): Promise<{
         endpoint: subJson.endpoint,
         keys: subJson.keys,
         userAgent: navigator.userAgent,
+        platform,
+        deviceLabel,
       }),
     });
 
@@ -111,6 +142,41 @@ export async function subscribeUserToPush(token: string): Promise<{
   } catch (error: any) {
     console.error('[PushManager] Subscription error:', error);
     return { success: false, permission: 'granted', error: error.message || 'Error subscribing to push' };
+  }
+}
+
+/**
+ * Reconciles push subscription upon login if permission was already granted.
+ */
+export async function syncPushSubscriptionOnLogin(token: string): Promise<void> {
+  if (!token || !isPushSupported()) return;
+  if (Notification.permission !== 'granted') return;
+
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      const subJson = subscription.toJSON();
+      const platform = isIos() ? 'iOS' : /Android/.test(navigator.userAgent) ? 'Android' : 'Desktop';
+      const deviceLabel = isStandalone() ? `${platform} PWA` : `${platform} Browser`;
+
+      await fetch(`${API_BASE_URL}/api/notifications/push/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          endpoint: subJson.endpoint,
+          keys: subJson.keys,
+          userAgent: navigator.userAgent,
+          platform,
+          deviceLabel,
+        }),
+      }).catch(() => {});
+    }
+  } catch (e) {
+    // Non-blocking sync attempt
   }
 }
 

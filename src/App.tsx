@@ -19,6 +19,7 @@ import AppDownload from "@/pages/AppDownload"
 import PaymentSuccess from "@/pages/PaymentSuccess"
 import RegisterModal from "@/components/RegisterModal"
 import AuthPromptModal from "@/components/AuthPromptModal"
+import NotificationPromptModal from "@/components/NotificationPromptModal"
 import PageLoader from "@/components/PageLoader"
 import { RegisterModalProvider } from "@/context/RegisterModalContext"
 
@@ -77,6 +78,7 @@ export default function App() {
         <MobileBottomNavigation />
         <RegisterModal />
         <AuthPromptModal />
+        <NotificationPromptModal />
         <PageLoader />
       </div>
     </RegisterModalProvider>

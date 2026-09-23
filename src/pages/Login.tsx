@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Lock, Mail, Loader2, ArrowRight } from 'lucide-react'
 import { useRegisterModal } from '@/context/RegisterModalContext'
 import { API_BASE_URL } from '@/config'
+import { syncPushSubscriptionOnLogin } from '@/utils/pushManager'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export default function Login() {
       if (response.ok) {
         localStorage.setItem('dehadak_auth', data.token)
         localStorage.setItem('dehadak_user', JSON.stringify(data.user || {}))
+        syncPushSubscriptionOnLogin(data.token).catch(() => {})
         const destination = (location.state as any)?.from || '/'
         navigate(destination, { replace: true })
       } else {
