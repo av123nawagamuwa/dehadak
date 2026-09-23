@@ -92,9 +92,9 @@ export default function PricingPage() {
       featured: true,
       buttonText: 'Upgrade to Gold VIP',
       features: [
-        { text: 'Send up to 50 interest requests', included: true },
-        { text: 'Accept up to 50 received interests', included: true },
-        { text: 'Message up to 50 connections (unlimited chat)', included: true },
+        { text: 'Send up to 100 interest requests', included: true },
+        { text: 'Accept up to 100 received interests', included: true },
+        { text: 'Message up to 100 connections (unlimited chat)', included: true },
         { text: 'Full 8-point astrological & lifestyle match %', included: true },
         { text: 'Gold VIP luxury gold profile badge', included: true },
         { text: 'Priority placement in Search Results', included: true },
@@ -351,14 +351,14 @@ export default function PricingPage() {
                     </div>
 
                     {/* Main Monthly Price Focus */}
-                    <div className="flex items-baseline gap-1 mt-0.5 mb-3">
-                      <span className={`font-serif text-3xl sm:text-4xl font-extrabold tracking-tight ${
+                    <div className="flex items-baseline gap-1 mt-0.5 mb-3 flex-nowrap overflow-hidden">
+                      <span className={`font-serif text-2xl sm:text-3xl xl:text-4xl font-extrabold tracking-tight whitespace-nowrap ${
                         isGold ? 'text-[#F7D878]' : 'text-[#1C1412]'
                       }`}>
                         {currency === 'lkr' ? plan.monthlyLKR : plan.monthlyUSD}
                       </span>
                       {plan.durationMonths > 0 && (
-                        <span className={`text-xs font-semibold ${
+                        <span className={`text-xs font-semibold whitespace-nowrap shrink-0 ${
                           isGold ? 'text-[#FAF6F0]/75' : 'text-gray-500'
                         }`}>
                           /month

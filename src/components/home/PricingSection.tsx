@@ -40,9 +40,9 @@ export default function PricingSection() {
       durationMonths: 3,
       description: 'The premier choice for serious marriage seekers and families across Sri Lanka.',
       features: [
-        'Send up to 50 interest requests',
-        'Accept up to 50 received interests',
-        'Message up to 50 connections (unlimited chat)',
+        'Send up to 100 interest requests',
+        'Accept up to 100 received interests',
+        'Message up to 100 connections (unlimited chat)',
         'Full 8-point astrological & lifestyle match %',
         'Gold VIP luxury gold profile badge',
         'Priority placement in Search Results',

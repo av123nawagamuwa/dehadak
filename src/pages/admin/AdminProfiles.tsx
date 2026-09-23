@@ -613,9 +613,9 @@ export default function AdminProfiles() {
                     </div>
                     <p className="text-[11px] text-amber-700 mb-2">3 Months duration</p>
                     <ul className="text-[11px] text-amber-800 space-y-1 font-medium">
-                      <li>• 50 Interest Requests</li>
-                      <li>• 50 Acceptances</li>
-                      <li>• 50 Chat Connections</li>
+                      <li>• 100 Interest Requests</li>
+                      <li>• 100 Acceptances</li>
+                      <li>• 100 Chat Connections</li>
                       <li>• Horoscope Match %</li>
                     </ul>
                   </div>
