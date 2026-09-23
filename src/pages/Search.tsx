@@ -6,9 +6,15 @@ import {
   User,
   Sparkles,
   X,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  Info,
 } from 'lucide-react'
-import ProfileCard from '@/components/ProfileCard'
+import ProfileCard, { type PreferenceMatchData } from '@/components/ProfileCard'
 import ProfileDetailModal from '@/components/ProfileDetailModal'
+import MatchingPreferencesModal from '@/components/MatchingPreferencesModal'
+import QuotaUpgradeModal from '@/components/QuotaUpgradeModal'
 import { Input } from '@/components/ui/input'
 import {
   Sheet,
@@ -26,22 +32,7 @@ import {
 import { API_BASE_URL } from '@/config'
 import FinalCTASection from '@/components/home/FinalCTASection'
 
-function cleanPhotoUrl(url: any): string {
-  if (!url) return ''
-  if (typeof url === 'string') {
-    if (url.startsWith('{')) {
-      try {
-        const parsed = JSON.parse(url)
-        return parsed.url || url
-      } catch (e) {
-        return url
-      }
-    }
-    return url
-  }
-  if (typeof url === 'object' && url.url) return url.url
-  return String(url)
-}
+import { cleanPhotoUrl } from '@/utils/imageUrl'
 
 interface FilterState {
   gender: string
@@ -54,6 +45,9 @@ interface FilterState {
   civilStatuses: string[]
   professions: string[]
   education: string[]
+  dietaryHabits: string[]
+  drinkingHabits: string[]
+  smokingHabits: string[]
   verifiedOnly: boolean
 }
 
@@ -64,6 +58,8 @@ interface SearchProfile {
   location: string
   religion: string
   ethnicity: string
+  caste?: string
+  casteOther?: string
   height: string
   profession: string
   education?: string
@@ -72,7 +68,12 @@ interface SearchProfile {
   gender?: string
   verified: boolean
   premium: boolean
+  packageCode?: string
+  packageName?: string
+  phoneRevealed?: boolean
+  privacyMode: boolean
   interestStatus: 'idle' | 'sending' | 'pending' | 'accepted' | 'declined'
+  preferenceMatch?: PreferenceMatchData | null
 }
 
 const filterOptions = {
@@ -114,6 +115,28 @@ const filterOptions = {
     "Other"
   ],
   country: ['Sri Lanka', 'United Arab Emirates', 'United Kingdom', 'Australia', 'United States', 'Canada', 'Qatar', 'Italy'],
+  dietaryHabits: [
+    'Vegetarian',
+    'Vegan',
+    'Pescatarian (fish, no other meat)',
+    'Non-vegetarian',
+    'Other',
+    'Prefer not to say',
+  ],
+  drinkingHabits: [
+    'Never drink',
+    'Occasionally / Socially',
+    'Regularly',
+    'Previously drank, now stopped',
+    'Prefer not to say',
+  ],
+  smokingHabits: [
+    'Never smoke',
+    'Occasionally / Socially',
+    'Regularly',
+    'Previously smoked, now stopped',
+    'Prefer not to say',
+  ],
 }
 
 // Stable Filter Sidebar Component outside SearchPage to prevent accordion collapse/unmount on checkbox click
@@ -371,6 +394,81 @@ function FilterSidebar({
             </div>
           </AccordionContent>
         </AccordionItem>
+
+        {/* Dietary Habits */}
+        <AccordionItem value="Dietary Habits" className="border-b border-[#EADFCF]/60">
+          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-[#1C1412] hover:no-underline py-3">
+            Dietary Habits (Optional)
+          </AccordionTrigger>
+          <AccordionContent className="pb-3">
+            <div className="space-y-2">
+              {filterOptions.dietaryHabits.map((item) => (
+                <label
+                  key={item}
+                  className="flex items-center gap-2.5 text-xs text-[#1C1412] cursor-pointer hover:text-[#9B6B15]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.dietaryHabits.includes(item)}
+                    onChange={() => toggleArrayFilter('dietaryHabits', item)}
+                    className="w-4 h-4 rounded accent-[#E5A93C] text-[#E5A93C] focus:ring-[#E5A93C]"
+                  />
+                  <span className="font-medium">{item}</span>
+                </label>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Drinking Habits */}
+        <AccordionItem value="Drinking Habits" className="border-b border-[#EADFCF]/60">
+          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-[#1C1412] hover:no-underline py-3">
+            Drinking Habits (Optional)
+          </AccordionTrigger>
+          <AccordionContent className="pb-3">
+            <div className="space-y-2">
+              {filterOptions.drinkingHabits.map((item) => (
+                <label
+                  key={item}
+                  className="flex items-center gap-2.5 text-xs text-[#1C1412] cursor-pointer hover:text-[#9B6B15]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.drinkingHabits.includes(item)}
+                    onChange={() => toggleArrayFilter('drinkingHabits', item)}
+                    className="w-4 h-4 rounded accent-[#E5A93C] text-[#E5A93C] focus:ring-[#E5A93C]"
+                  />
+                  <span className="font-medium">{item}</span>
+                </label>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+
+        {/* Smoking Habits */}
+        <AccordionItem value="Smoking Habits" className="border-b border-[#EADFCF]/60">
+          <AccordionTrigger className="text-xs font-bold uppercase tracking-wider text-[#1C1412] hover:no-underline py-3">
+            Smoking Habits (Optional)
+          </AccordionTrigger>
+          <AccordionContent className="pb-3">
+            <div className="space-y-2">
+              {filterOptions.smokingHabits.map((item) => (
+                <label
+                  key={item}
+                  className="flex items-center gap-2.5 text-xs text-[#1C1412] cursor-pointer hover:text-[#9B6B15]"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.smokingHabits.includes(item)}
+                    onChange={() => toggleArrayFilter('smokingHabits', item)}
+                    className="w-4 h-4 rounded accent-[#E5A93C] text-[#E5A93C] focus:ring-[#E5A93C]"
+                  />
+                  <span className="font-medium">{item}</span>
+                </label>
+              ))}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
       </Accordion>
     </div>
   )
@@ -423,6 +521,9 @@ export default function SearchPage() {
     const educationParam = searchParams.get('education')
     const professionParam = searchParams.get('profession')
     const countryParam = searchParams.get('country')
+    const dietaryParam = searchParams.get('dietaryHabits') || searchParams.get('dietary')
+    const drinkingParam = searchParams.get('drinkingHabits') || searchParams.get('drinking')
+    const smokingParam = searchParams.get('smokingHabits') || searchParams.get('smoking')
 
     return {
       gender: genderParam,
@@ -435,15 +536,45 @@ export default function SearchPage() {
       civilStatuses: civilStatusParam ? [civilStatusParam] : [],
       professions: professionParam ? [professionParam] : [],
       education: educationParam ? [educationParam] : [],
+      dietaryHabits: dietaryParam ? dietaryParam.split(',') : [],
+      drinkingHabits: drinkingParam ? drinkingParam.split(',') : [],
+      smokingHabits: smokingParam ? smokingParam.split(',') : [],
       verifiedOnly: false,
     }
   })
 
-  const [sortBy, setSortBy] = useState('latest')
+  const [viewerMatchContext, setViewerMatchContext] = useState<any>(null)
+  const [prefModalOpen, setPrefModalOpen] = useState(false)
+  const [sortBy, setSortBy] = useState(() => searchParams.get('sortBy') || (localStorage.getItem('dehadak_auth') ? 'recommended' : 'latest'))
   const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '')
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
   const [profiles, setProfiles] = useState<SearchProfile[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [quotaModal, setQuotaModal] = useState<{
+    isOpen: boolean
+    feature?: 'SEND_INTEREST' | 'ACCEPT_INTEREST' | 'MESSAGING_CONNECTION' | 'PREFERENCE_MATCH' | 'CONTACT_REVEAL'
+    message?: string
+  }>({ isOpen: false })
+  const PROFILES_PER_PAGE = 9
+
+  // Immediate cleanup on logout
+  useEffect(() => {
+    const handleLogout = () => {
+      setViewerMatchContext(null)
+      setProfiles((prev) =>
+        prev.map((p) => ({
+          ...p,
+          preferenceMatch: null,
+        }))
+      )
+      setSortBy('latest')
+    }
+    window.addEventListener('dehadak:logout', handleLogout)
+    return () => {
+      window.removeEventListener('dehadak:logout', handleLogout)
+    }
+  }, [])
 
   const fetchProfiles = useCallback(async () => {
     setLoading(true)
@@ -458,22 +589,28 @@ export default function SearchPage() {
       if (filters.countries.length > 0) queryParams.append('countries', filters.countries.join(','))
       if (filters.education.length > 0) queryParams.append('education', filters.education.join(','))
       if (filters.professions.length > 0) queryParams.append('professions', filters.professions.join(','))
+      if (filters.dietaryHabits.length > 0) queryParams.append('dietaryHabits', filters.dietaryHabits.join(','))
+      if (filters.drinkingHabits.length > 0) queryParams.append('drinkingHabits', filters.drinkingHabits.join(','))
+      if (filters.smokingHabits.length > 0) queryParams.append('smokingHabits', filters.smokingHabits.join(','))
       if (searchQuery.trim()) queryParams.append('q', searchQuery.trim())
       if (sortBy) queryParams.append('sortBy', sortBy)
 
-      const res = await fetch(`${API_BASE_URL}/api/search?${queryParams.toString()}`)
+      const token = localStorage.getItem('dehadak_auth')
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/search?${queryParams.toString()}`, { headers })
       const data = await res.json()
 
       if (res.ok && data.profiles && Array.isArray(data.profiles)) {
+        setViewerMatchContext(data.viewerMatchContext || null)
         const mappedProfiles: SearchProfile[] = data.profiles.map((p: any) => {
-          const rawPhoto = p.photos && p.photos.length > 0 ? p.photos[0] : ''
+          const isPhotoPrivate = Boolean(p.photo_private || p.photo_privacy === 0 || p.photo_privacy === false)
+          const rawPhoto = p.photos && p.photos.length > 0 ? (p.photos[0]?.url || p.photos[0]) : (p.avatar_url || '')
           const cleanedPhoto = cleanPhotoUrl(rawPhoto)
-          let finalPhotoUrl = ''
-          if (cleanedPhoto) {
-            finalPhotoUrl = cleanedPhoto.startsWith('http')
-              ? cleanedPhoto
-              : `${API_BASE_URL}${cleanedPhoto}`
-          }
+          const finalPhotoUrl = (!isPhotoPrivate && cleanedPhoto) ? cleanedPhoto : ''
 
           let loc = 'Sri Lanka'
           if (p.country && p.country !== 'Sri Lanka') {
@@ -493,15 +630,22 @@ export default function SearchPage() {
             location: loc,
             religion: p.religion || 'Buddhist',
             ethnicity: p.ethnicity || 'Sinhalese',
+            caste: p.caste || '',
+            casteOther: p.caste_other || '',
             height: p.height || "5'6\"",
             profession: p.profession || 'Professional',
             education: p.education || 'Graduate',
             civilStatus: p.civil_status || 'Never Married',
             gender: p.gender || 'female',
             image: finalPhotoUrl,
-            verified: true,
-            premium: p.plan === 'premium' || p.plan === 'vip',
-            interestStatus: 'idle',
+            verified: p.verification_status === 'VERIFIED',
+            premium: (p.plan || '').toLowerCase() === 'premium' || (p.plan || '').toLowerCase() === 'vip',
+            packageCode: p.package_code,
+            packageName: p.package_badge,
+            phoneRevealed: Boolean(p.phone_revealed),
+            privacyMode: isPhotoPrivate,
+            interestStatus: (p.interest_status as any) || 'idle',
+            preferenceMatch: p.preference_match || null,
           }
         })
         setProfiles(mappedProfiles)
@@ -519,6 +663,25 @@ export default function SearchPage() {
   useEffect(() => {
     fetchProfiles()
   }, [fetchProfiles])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters, sortBy, searchQuery])
+
+  const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE)
+  const startIndex = (currentPage - 1) * PROFILES_PER_PAGE
+  const currentProfiles = profiles.slice(startIndex, startIndex + PROFILES_PER_PAGE)
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return
+    setCurrentPage(newPage)
+    const el = document.getElementById('search-results-section')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } else {
+      window.scrollTo({ top: 400, behavior: 'smooth' })
+    }
+  }
 
   const toggleArrayFilter = (key: keyof FilterState, value: string) => {
     setFilters((prev) => {
@@ -542,6 +705,9 @@ export default function SearchPage() {
       civilStatuses: [],
       professions: [],
       education: [],
+      dietaryHabits: [],
+      drinkingHabits: [],
+      smokingHabits: [],
       verifiedOnly: false,
     })
     setSearchQuery('')
@@ -605,6 +771,20 @@ export default function SearchPage() {
                   interestStatus: (data.status || 'pending') as SearchProfile['interestStatus'],
                 }
               : item
+          )
+        )
+        return
+      }
+
+      if (response.status === 403 && data.code === 'PACKAGE_LIMIT_REACHED') {
+        setQuotaModal({
+          isOpen: true,
+          feature: 'SEND_INTEREST',
+          message: data.message || data.error || 'You have reached your sent interest limit. Upgrade your package to send more interest requests.',
+        })
+        setProfiles((current) =>
+          current.map((item) =>
+            item.id === profile.id ? { ...item, interestStatus: 'idle' } : item
           )
         )
         return
@@ -788,26 +968,91 @@ export default function SearchPage() {
         </div>
 
         {/* Layout: Sidebar (3 cols) + Results (9 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Desktop Left Sidebar */}
-          <div className="hidden lg:block lg:col-span-3 bg-white rounded-3xl p-6 border border-[#EADFCF] shadow-card sticky top-28">
-            <FilterSidebar
-              filters={filters}
-              setFilters={setFilters}
-              toggleArrayFilter={toggleArrayFilter}
-              clearFilters={clearFilters}
-              activeFilterCount={activeFilterCount}
-            />
+        <div id="search-results-section" className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          {/* Desktop Left Sidebar - Equal Height with 3 Rows of Profiles */}
+          <div className="hidden lg:flex flex-col h-full lg:col-span-3 bg-white rounded-3xl p-6 border border-[#EADFCF] shadow-card">
+            <div className="flex items-center justify-between pb-3 mb-2 border-b border-[#EADFCF]/60 shrink-0">
+              <h3 className="font-serif font-bold text-lg text-[#1C1412]">Refine Search</h3>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs font-bold text-[#E5A93C] hover:underline cursor-pointer"
+                >
+                  Clear All ({activeFilterCount})
+                </button>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto pr-1.5 custom-scroll">
+              <FilterSidebar
+                filters={filters}
+                setFilters={setFilters}
+                toggleArrayFilter={toggleArrayFilter}
+                clearFilters={clearFilters}
+                activeFilterCount={activeFilterCount}
+                inSheet={true}
+              />
+            </div>
           </div>
 
           {/* Results Grid */}
-          <div className="lg:col-span-9 space-y-6">
+          <div className="lg:col-span-9 flex flex-col justify-between space-y-6">
+            {/* Guest / Incomplete Profile Notice Banner */}
+            {!getAuthToken() ? (
+              <div className="bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 rounded-2xl p-4 border border-[#EADFCF] shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#E5A93C]/15 border border-[#E5A93C]/30 flex items-center justify-center shrink-0">
+                    <Heart className="w-5 h-5 text-[#E5A93C]" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-[#1C1412] text-sm">
+                      Log in or create an account to see your matches
+                    </h4>
+                    <p className="text-xs text-[#1C1412]/70">
+                      Personalized preference match scores and custom matching criteria are exclusively available for registered members.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-register-modal'))}
+                  className="btn-gold px-4 py-2 rounded-xl text-xs font-bold shrink-0 cursor-pointer shadow-xs"
+                >
+                  Sign In / Register
+                </button>
+              </div>
+            ) : viewerMatchContext && !viewerMatchContext.canMatch ? (
+              <div className="bg-amber-50/90 rounded-2xl p-4 border border-amber-200 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                    <Info className="w-5 h-5 text-amber-700" />
+                  </div>
+                  <div>
+                    <h4 className="font-serif font-bold text-[#1C1412] text-sm">
+                      Complete your profile to see your matches
+                    </h4>
+                    <p className="text-xs text-amber-800/80">
+                      Please provide your missing profile information (Age, Height, Religion, or Marital Status) so we can accurately calculate preference matches.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="/profile"
+                  className="px-4 py-2 rounded-xl bg-amber-600 text-white hover:bg-amber-700 text-xs font-bold shrink-0 transition-colors shadow-xs"
+                >
+                  Complete Profile
+                </a>
+              </div>
+            ) : null}
+
             {/* Sort & Count Bar */}
             <div className="bg-white rounded-2xl p-4 border border-[#EADFCF] shadow-xs space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-[#1C1412] text-sm">
-                    {loading ? 'Searching profiles...' : `${profiles.length} Profiles Found`}
+                    {loading
+                      ? 'Searching profiles...'
+                      : `${profiles.length} Profiles Found ${
+                          totalPages > 1 ? `• Page ${currentPage} of ${totalPages}` : ''
+                        }`}
                   </span>
                   {activeFilterCount > 0 && (
                     <span className="px-2 py-0.5 rounded-full bg-[#E5A93C]/20 text-[#9B6B15] font-bold text-[10px]">
@@ -816,18 +1061,36 @@ export default function SearchPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="text-[#1C1412]/60 font-medium">Sort by:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="font-bold text-[#1C1412] bg-[#FAF6F0] px-3 py-1.5 rounded-xl border border-[#EADFCF] outline-none cursor-pointer text-xs"
-                  >
-                    <option value="latest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="age_asc">Age: Youngest</option>
-                    <option value="age_desc">Age: Oldest</option>
-                  </select>
+                <div className="flex flex-wrap items-center gap-2">
+                  {getAuthToken() && viewerMatchContext?.canMatch && (
+                    <button
+                      onClick={() => setPrefModalOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E5A93C]/40 bg-[#E5A93C]/10 text-[#9B6B15] hover:bg-[#E5A93C]/20 font-bold text-xs transition-all cursor-pointer shadow-xs"
+                      title="Customize your matching preferences"
+                    >
+                      <SlidersHorizontal className="w-3.5 h-3.5" />
+                      <span>Matching Preferences</span>
+                    </button>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#1C1412]/60 font-medium">Sort by:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="font-bold text-[#1C1412] bg-[#FAF6F0] px-3 py-1.5 rounded-xl border border-[#EADFCF] outline-none cursor-pointer text-xs"
+                    >
+                      {getAuthToken() && viewerMatchContext?.canMatch && (
+                        <option value="recommended">Recommended for You</option>
+                      )}
+                      <option value="latest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="age_asc">Age: Low to High</option>
+                      <option value="age_desc">Age: High to Low</option>
+                      <option value="height_asc">Height: Low to High</option>
+                      <option value="height_desc">Height: High to Low</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -901,6 +1164,39 @@ export default function SearchPage() {
                     </button>
                   ))}
 
+                  {filters.dietaryHabits.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => toggleArrayFilter('dietaryHabits', item)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E5A93C]/15 border border-[#E5A93C]/30 text-[11px] font-semibold text-[#9B6B15] hover:bg-[#E5A93C]/25 transition-colors"
+                    >
+                      <span>Diet: {item}</span>
+                      <X className="w-3 h-3" />
+                    </button>
+                  ))}
+
+                  {filters.drinkingHabits.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => toggleArrayFilter('drinkingHabits', item)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E5A93C]/15 border border-[#E5A93C]/30 text-[11px] font-semibold text-[#9B6B15] hover:bg-[#E5A93C]/25 transition-colors"
+                    >
+                      <span>Drink: {item}</span>
+                      <X className="w-3 h-3" />
+                    </button>
+                  ))}
+
+                  {filters.smokingHabits.map((item) => (
+                    <button
+                      key={item}
+                      onClick={() => toggleArrayFilter('smokingHabits', item)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E5A93C]/15 border border-[#E5A93C]/30 text-[11px] font-semibold text-[#9B6B15] hover:bg-[#E5A93C]/25 transition-colors"
+                    >
+                      <span>Smoke: {item}</span>
+                      <X className="w-3 h-3" />
+                    </button>
+                  ))}
+
                   <button
                     onClick={clearFilters}
                     className="text-[11px] font-bold text-[#E5A93C] hover:underline ml-1"
@@ -911,35 +1207,91 @@ export default function SearchPage() {
               )}
             </div>
 
-            {/* Profile Cards Grid */}
+            {/* Profile Cards Grid (9 profiles max = 3 rows) */}
             {loading ? (
               <div className="py-24 text-center">
                 <div className="w-10 h-10 border-4 border-[#E5A93C] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                 <p className="text-xs font-bold text-[#1C1412]/70">Finding matching profiles...</p>
               </div>
-            ) : profiles.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {profiles.map((profile) => (
-                  <ProfileCard
-                    key={profile.id}
-                    id={profile.id}
-                    name={profile.name}
-                    age={profile.age}
-                    location={profile.location}
-                    religion={profile.religion}
-                    ethnicity={profile.ethnicity}
-                    height={profile.height}
-                    profession={profile.profession}
-                    education={profile.education}
-                    gender={profile.gender}
-                    image={profile.image}
-                    verified={profile.verified}
-                    premium={profile.premium}
-                    interestStatus={profile.interestStatus}
-                    onViewProfile={() => handleOpenProfileModal(profile.id)}
-                    onSendInterest={() => handleSendInterest(profile)}
-                  />
-                ))}
+            ) : currentProfiles.length > 0 ? (
+              <div className="space-y-6 flex-1 flex flex-col justify-between">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {currentProfiles.map((profile) => (
+                    <ProfileCard
+                      key={profile.id}
+                      id={profile.id}
+                      name={profile.name}
+                      age={profile.age}
+                      location={profile.location}
+                      religion={profile.religion}
+                      ethnicity={profile.ethnicity}
+                      caste={profile.caste}
+                      height={profile.height}
+                      profession={profile.profession}
+                      education={profile.education}
+                      gender={profile.gender}
+                      image={profile.image}
+                      verified={profile.verified}
+                      premium={profile.premium}
+                      packageCode={profile.packageCode}
+                      packageName={profile.packageName}
+                      privacyMode={profile.privacyMode}
+                      interestStatus={profile.interestStatus}
+                      preferenceMatch={profile.preferenceMatch}
+                      onViewProfile={() => handleOpenProfileModal(profile.id)}
+                      onSendInterest={() => handleSendInterest(profile)}
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="bg-white rounded-2xl p-4 border border-[#EADFCF] shadow-xs flex flex-wrap items-center justify-between gap-4 mt-6">
+                    <div className="text-xs text-[#1C1412]/70 font-medium">
+                      Showing <span className="font-bold text-[#1C1412]">{startIndex + 1}</span> -{' '}
+                      <span className="font-bold text-[#1C1412]">
+                        {Math.min(startIndex + PROFILES_PER_PAGE, profiles.length)}
+                      </span>{' '}
+                      of <span className="font-bold text-[#1C1412]">{profiles.length}</span> profiles
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 rounded-xl border border-[#EADFCF] text-xs font-bold text-[#1C1412] hover:bg-[#FAF6F0] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>Prev</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                              currentPage === page
+                                ? 'bg-[#E5A93C] text-[#1C1412] shadow-sm'
+                                : 'border border-[#EADFCF] bg-white text-[#1C1412]/80 hover:bg-[#FAF6F0]'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 rounded-xl border border-[#EADFCF] text-xs font-bold text-[#1C1412] hover:bg-[#FAF6F0] disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>Next</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-3xl p-12 text-center border border-[#EADFCF] shadow-card">
@@ -976,6 +1328,21 @@ export default function SearchPage() {
             handleSendInterest(prof)
           }
         }}
+      />
+
+      {/* Matching Preferences Modal */}
+      <MatchingPreferencesModal
+        isOpen={prefModalOpen}
+        onClose={() => setPrefModalOpen(false)}
+        onSaved={() => fetchProfiles()}
+      />
+
+      {/* Quota Upgrade Modal */}
+      <QuotaUpgradeModal
+        isOpen={quotaModal.isOpen}
+        onClose={() => setQuotaModal({ isOpen: false })}
+        feature={quotaModal.feature}
+        message={quotaModal.message}
       />
 
       {/* Video Call to Action Section */}

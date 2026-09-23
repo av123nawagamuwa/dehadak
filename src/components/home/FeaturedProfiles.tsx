@@ -6,6 +6,8 @@ import { Sparkles, ArrowRight, HeartHandshake } from 'lucide-react'
 import ProfileCard from '@/components/ProfileCard'
 import { useRegisterModal } from '@/context/RegisterModalContext'
 import { API_BASE_URL } from '@/config'
+import { getGenderAvatar } from '@/utils/avatar'
+import { cleanPhotoUrl } from '@/utils/imageUrl'
 
 export default function FeaturedProfiles() {
   const { t } = useTranslation()
@@ -80,37 +82,20 @@ export default function FeaturedProfiles() {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-function cleanPhotoUrl(url: any): string {
-  if (!url) return ''
-  if (typeof url === 'string') {
-    if (url.startsWith('{')) {
-      try {
-        const parsed = JSON.parse(url)
-        return parsed.url || url
-      } catch (e) {
-        return url
-      }
-    }
-    return url
-  }
-  if (typeof url === 'object' && url.url) return url.url
-  return String(url)
-}
-
         const res = await fetch(`${API_BASE_URL}/api/search?limit=4`)
         if (res.ok) {
           const data = await res.json()
           if (data.profiles && data.profiles.length > 0) {
             const mapped = data.profiles.map((p: any) => {
-              const rawPhoto = p.photos && p.photos.length > 0 ? (p.photos[0]?.url || p.photos[0]) : ''
+              const isPhotoPrivate = Boolean(p.photo_private || p.photo_privacy === 0 || p.photo_privacy === false)
+              const rawPhoto = p.photos && p.photos.length > 0 ? (p.photos[0]?.url || p.photos[0]) : (p.avatar_url || '')
               const cleaned = cleanPhotoUrl(rawPhoto)
-              const finalPhoto = cleaned
-                ? (cleaned.startsWith('http') ? cleaned : `${API_BASE_URL}${cleaned}`)
-                : (p.gender === 'female' ? '/profile-female-1.jpg' : '/profile-male-1.jpg')
+              const avatarFallback = getGenderAvatar(p.gender)
+              const finalPhoto = (!isPhotoPrivate && cleaned) ? cleaned : avatarFallback
 
               return {
                 id: p.id || p.user_id,
-                name: `${p.first_name || ''} ${p.last_name ? p.last_name.charAt(0) + '.' : ''}`.trim() || 'Verified Member',
+                name: `${p.first_name || ''} ${p.last_name ? p.last_name.charAt(0) + '.' : ''}`.trim() || 'Member',
                 age: p.birth_year ? new Date().getFullYear() - Number(p.birth_year) : (p.age || 27),
                 location: [p.city, p.district].filter(Boolean).join(', ') || 'Sri Lanka',
                 religion: p.religion || 'Buddhist',
@@ -120,9 +105,9 @@ function cleanPhotoUrl(url: any): string {
                 education: p.education || 'Graduate',
                 gender: p.gender || 'male',
                 image: finalPhoto,
-                verified: true,
-                premium: (p.plan || '').toLowerCase() === 'premium' || (p.plan || '').toLowerCase() === 'standard',
-                privacyMode: false,
+                verified: p.verification_status === 'VERIFIED' || p.verified === true,
+                premium: (p.plan || '').toLowerCase() === 'premium' || (p.plan || '').toLowerCase() === 'vip',
+                privacyMode: isPhotoPrivate,
               }
             })
             setProfiles(mapped)

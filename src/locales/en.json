@@ -254,5 +254,18 @@
     "safetyGuidelines": "Safety Guidelines",
     "contactUs": "Contact Us",
     "copyright": "© 2026 Dehadak. All rights reserved. Two Hearts, One Journey."
+  },
+  "caste": {
+    "label": "Caste (Optional)",
+    "placeholder": "Select caste (optional)",
+    "specifyOther": "Please specify your caste..."
+  },
+  "verification": {
+    "verified": "Verified",
+    "verifiedBadge": "Verified Badge",
+    "verifiedMember": "Verified Member",
+    "underReview": "Under Review",
+    "rejected": "Requires Resubmission",
+    "notSubmitted": "Not Submitted"
   }
 }

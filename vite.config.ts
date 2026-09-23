@@ -115,9 +115,11 @@ export default defineConfig({
         ]
       },
       workbox: {
+        importScripts: ['/push-sw.js'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg,woff2,ttf}'],
         navigateFallback: '/index.html',
+        navigateFallbackAllowlist: [/^(?!\/api).*$/],
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
           // Google Fonts caching
@@ -136,8 +138,12 @@ export default defineConfig({
             }
           },
           // Public image assets caching (stale while revalidate)
+          // Explicitly excludes sensitive private documents served under /api/
           {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            urlPattern: ({ url }: { url: URL }) => {
+              if (url.pathname.startsWith('/api')) return false
+              return /\.(?:png|jpg|jpeg|svg|gif|webp)$/i.test(url.pathname)
+            },
             handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'public-images-cache',

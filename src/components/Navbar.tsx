@@ -9,11 +9,12 @@ import {
   User,
   LogOut,
   CreditCard,
-  FileText,
   MessageCircle,
   Crown,
   Sparkles,
   ShieldCheck,
+  SlidersHorizontal,
+  Bell,
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -25,6 +26,8 @@ import {
 import { useRegisterModal } from '@/context/RegisterModalContext'
 import { API_BASE_URL } from '@/config'
 import InstallAppButton from '@/components/InstallAppButton'
+import NotificationDropdown from '@/components/NotificationDropdown'
+import { detachPushOnLogout } from '@/utils/pushManager'
 
 interface NavbarProps {
   transparent?: boolean
@@ -37,7 +40,10 @@ export default function Navbar({ transparent = true }: NavbarProps) {
   const [totalUnread, setTotalUnread] = useState(0)
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [unreadInterests, setUnreadInterests] = useState(0)
-  const [userName, setUserName] = useState('Verified Member')
+  const [unreadNotifications, setUnreadNotifications] = useState(0)
+  const [userName, setUserName] = useState('Member')
+  const [isUserVerified, setIsUserVerified] = useState(false)
+  const [isUserPremium, setIsUserPremium] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -75,6 +81,8 @@ export default function Navbar({ transparent = true }: NavbarProps) {
           } else if (parsed.email) {
             setUserName(parsed.email.split('@')[0])
           }
+          setIsUserVerified(parsed.verification_status === 'VERIFIED' || parsed.is_verified === true)
+          setIsUserPremium((parsed.plan || '').toLowerCase() === 'premium' || (parsed.plan || '').toLowerCase() === 'vip')
         } catch (e) {}
       }
 
@@ -86,6 +94,7 @@ export default function Navbar({ transparent = true }: NavbarProps) {
           if (data) {
             setUnreadMessages(data.unreadMessages || 0)
             setUnreadInterests(data.pendingInterests || 0)
+            setUnreadNotifications(data.unreadNotifications || 0)
             setTotalUnread(data.totalUnread || 0)
           }
         })
@@ -94,6 +103,7 @@ export default function Navbar({ transparent = true }: NavbarProps) {
       setTotalUnread(0)
       setUnreadMessages(0)
       setUnreadInterests(0)
+      setUnreadNotifications(0)
     }
   }
 
@@ -204,6 +214,13 @@ export default function Navbar({ transparent = true }: NavbarProps) {
               </button>
             </div>
 
+            {isAuthenticated && (
+              <NotificationDropdown
+                unreadCount={unreadNotifications}
+                onRefreshSummary={fetchNotificationSummary}
+              />
+            )}
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -226,12 +243,18 @@ export default function Navbar({ transparent = true }: NavbarProps) {
                   <div className="px-3 py-2 border-b border-[#D4A72C]/20">
                     <div className="flex items-center gap-1.5">
                       <p className="text-sm font-semibold text-white truncate">{userName}</p>
-                      <ShieldCheck className="w-4 h-4 text-[#D4A72C] shrink-0" />
+                      {isUserVerified && <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />}
                     </div>
-                    <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#D4A72C]/20 text-[#F3D77A] border border-[#D4A72C]/30">
-                      <Crown className="w-3 h-3 mr-1 text-[#F3D77A]" />
-                      Verified Member
-                    </span>
+                    {isUserPremium ? (
+                      <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#D4A72C]/20 text-[#F3D77A] border border-[#D4A72C]/30">
+                        <Crown className="w-3 h-3 mr-1 text-[#F3D77A]" />
+                        {isUserVerified ? 'Verified Premium' : 'Premium Member'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/10 text-[#FAF7F0]/80 border border-white/15">
+                        {isUserVerified ? 'Verified Member' : 'Member'}
+                      </span>
+                    )}
                   </div>
                   <DropdownMenuItem
                     onClick={() => navigate('/profile')}
@@ -264,16 +287,18 @@ export default function Navbar({ transparent = true }: NavbarProps) {
                     {t('nav.billing')}
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => navigate('/profile-edit')}
+                    onClick={() => navigate('/matching-preferences')}
                     className="text-[#FAF7F0]/90 hover:text-[#F3D77A] hover:bg-white/5 focus:bg-white/5 cursor-pointer py-2"
                   >
-                    <FileText className="w-4 h-4 mr-2 text-[#D4A72C]" />
-                    {t('nav.editAd')}
+                    <SlidersHorizontal className="w-4 h-4 mr-2 text-[#D4A72C]" />
+                    Matching Preferences
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-[#D4A72C]/20" />
                   <DropdownMenuItem
                     onClick={() => {
+                      detachPushOnLogout().catch(() => {})
                       localStorage.removeItem('dehadak_auth')
+                      window.dispatchEvent(new Event('dehadak:logout'))
                       setIsAuthenticated(false)
                       navigate('/')
                     }}
@@ -374,17 +399,42 @@ export default function Navbar({ transparent = true }: NavbarProps) {
                 <InstallAppButton variant="card" className="py-3 text-sm" />
 
                 {isAuthenticated ? (
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem('dehadak_auth')
-                      setIsAuthenticated(false)
-                      setMobileMenuOpen(false)
-                      navigate('/')
-                    }}
-                    className="w-full py-3 rounded-xl border border-rose-500/30 text-rose-300 font-semibold text-center hover:bg-rose-500/10"
-                  >
-                    {t('nav.signOut')}
-                  </button>
+                  <>
+                    <Link
+                      to="/notifications"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full py-2.5 rounded-xl border border-[#D4A72C]/40 text-[#F3D77A] font-semibold text-center hover:bg-[#D4A72C]/10 flex items-center justify-center gap-2"
+                    >
+                      <Bell className="w-4 h-4 text-[#D4A72C]" />
+                      <span>Notifications</span>
+                      {unreadNotifications > 0 && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-bold">
+                          {unreadNotifications}
+                        </span>
+                      )}
+                    </Link>
+                    <Link
+                      to="/matching-preferences"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full py-2.5 rounded-xl border border-[#D4A72C]/40 text-[#F3D77A] font-semibold text-center hover:bg-[#D4A72C]/10 flex items-center justify-center gap-2"
+                    >
+                      <SlidersHorizontal className="w-4 h-4 text-[#D4A72C]" />
+                      Matching Preferences
+                    </Link>
+                    <button
+                      onClick={() => {
+                        detachPushOnLogout().catch(() => {})
+                        localStorage.removeItem('dehadak_auth')
+                        window.dispatchEvent(new Event('dehadak:logout'))
+                        setIsAuthenticated(false)
+                        setMobileMenuOpen(false)
+                        navigate('/')
+                      }}
+                      className="w-full py-2.5 rounded-xl border border-rose-500/30 text-rose-300 font-semibold text-center hover:bg-rose-500/10"
+                    >
+                      {t('nav.signOut')}
+                    </button>
+                  </>
                 ) : (
                   <>
                     <button

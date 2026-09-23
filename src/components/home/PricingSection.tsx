@@ -10,10 +10,13 @@ export default function PricingSection() {
 
   const plans = [
     {
-      name: 'Free',
+      name: 'Free Explorer',
       tagline: 'Essential Access',
-      price: 'LKR 0',
-      period: 'Forever Free',
+      packLabel: 'Lifetime Access',
+      monthlyPrice: 'Free',
+      totalCost: 'Free',
+      period: 'Lifetime Access',
+      durationMonths: 0,
       description: 'Ideal for creating your profile and exploring verified matches across Sri Lanka.',
       features: [
         'Create a full verified profile',
@@ -28,42 +31,48 @@ export default function PricingSection() {
       badge: 'Free Tier',
     },
     {
-      name: 'Premium',
+      name: 'Gold VIP',
       tagline: 'Most Popular for Serious Seekers',
-      price: 'LKR 2,500',
-      period: 'per month',
-      description: 'Comprehensive features and priority visibility to connect with ideal matches faster.',
+      packLabel: '4 Months VIP',
+      monthlyPrice: 'Rs. 600',
+      totalCost: 'Rs. 2,400',
+      period: '4 Months Access',
+      durationMonths: 4,
+      description: 'The premier choice for serious marriage seekers and families across Sri Lanka.',
       features: [
-        'Everything in Free',
-        'Unlimited interest requests',
-        'View contact details upon mutual approval',
-        'Horoscope & astrological matching',
-        'Priority search ranking & badge',
-        'Advanced multi-criteria filters',
+        'Send up to 50 interest requests',
+        'Accept up to 50 received interests',
+        'Message up to 50 connections (unlimited chat)',
+        'Full 8-point astrological & lifestyle match %',
+        'Gold VIP luxury gold profile badge',
+        'Priority placement in Search Results',
       ],
       popular: true,
-      cta: 'Upgrade to Premium',
+      cta: 'Upgrade to Gold VIP',
       ctaLink: '/pricing',
       badge: 'Most Popular',
     },
     {
-      name: 'Premium Plus',
-      tagline: 'VIP Personalized Experience',
-      price: 'LKR 5,000',
-      period: 'per month',
-      description: 'Exclusive matrimonial support with tailored match recommendations and VIP discretion.',
+      name: 'Royal Platinum',
+      tagline: 'Elite Distinction & Direct Contact',
+      packLabel: '6 Months Elite',
+      monthlyPrice: 'Rs. 800',
+      totalCost: 'Rs. 4,800',
+      period: '6 Months Access',
+      durationMonths: 6,
+      description: 'Personalized matrimonial service with direct verified phone numbers and top search rank.',
       features: [
-        'Everything in Premium',
-        'Dedicated relationship consultant',
-        'Custom hand-picked match alerts',
-        'Maximum privacy controls & photo blur',
-        'Direct phone & WhatsApp support',
-        'VIP highlight across Sri Lanka & Overseas',
+        'Top of the page search priority (Ranked #1 on Search page)',
+        'Direct verified contact phone number reveal',
+        'Send & accept up to 150 interest requests',
+        'Message up to 150 connections (unlimited chat)',
+        'Full 8-point astrological & lifestyle match %',
+        'Royal Platinum regal badge & priority styling',
       ],
       popular: false,
-      cta: 'Choose Premium Plus',
+      cta: 'Join Royal Platinum',
       ctaLink: '/pricing',
-      badge: 'VIP Elite',
+      badge: 'Elite Distinction',
     },
   ]
 
@@ -133,15 +142,32 @@ export default function PricingSection() {
                   {plan.description}
                 </p>
 
-                {/* Price Display */}
-                <div className="mb-6 pb-6 border-b border-[#D4A72C]/20">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="font-serif text-4xl font-extrabold text-gold-shimmer">
-                      {plan.price}
+                {/* Poruwa-style Monthly Price & Total Cost */}
+                <div className="mb-6 p-4 rounded-2xl bg-black/40 border border-[#D4A72C]/30 text-white">
+                  <div className="mb-1">
+                    <span className="text-[11px] font-semibold text-[#F3D77A] tracking-wide">
+                      {plan.packLabel}
                     </span>
-                    <span className="text-xs text-[#FAF7F0]/60 font-medium">
-                      / {plan.period}
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mb-3">
+                    <span className="font-serif text-3xl sm:text-4xl font-extrabold text-gold-shimmer">
+                      {plan.monthlyPrice}
                     </span>
+                    {plan.durationMonths > 0 && (
+                      <span className="text-xs text-[#FAF7F0]/70 font-semibold">
+                        /month
+                      </span>
+                    )}
+                  </div>
+                  <div className="pt-2.5 border-t border-white/10 text-xs space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#FAF7F0]/70">Total cost</span>
+                      <span className="font-bold text-[#F3D77A]">{plan.totalCost}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#FAF7F0]/70">Duration</span>
+                      <span className="font-semibold text-white">{plan.period}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -160,7 +186,7 @@ export default function PricingSection() {
 
               {/* Action CTA */}
               <div>
-                {plan.name === 'Free' ? (
+                {plan.name === 'Free Explorer' ? (
                   <button
                     onClick={openRegisterModal}
                     className="w-full py-3.5 px-6 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all bg-white/10 hover:bg-white/15 text-[#FAF7F0] border border-[#D4A72C]/30"

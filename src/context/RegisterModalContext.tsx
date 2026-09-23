@@ -2,21 +2,41 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 
 interface RegisterModalContextType {
   isOpen: boolean
-  openRegisterModal: () => void
+  selectedPackage: string // 'FREE' | 'SILVER' | 'GOLD' | 'PLATINUM'
+  openRegisterModal: (packageCode?: any) => void
   closeRegisterModal: () => void
+  setSelectedPackage: (code: string) => void
 }
 
 const RegisterModalContext = createContext<RegisterModalContextType | undefined>(undefined)
 
 export function RegisterModalProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedPackage, setSelectedPackage] = useState<string>('FREE')
 
-  const openRegisterModal = () => setIsOpen(true)
-  const closeRegisterModal = () => setIsOpen(false)
+  const openRegisterModal = (packageCode?: any) => {
+    if (typeof packageCode === 'string') {
+      const code = packageCode.toUpperCase()
+      if (code.includes('PLATINUM')) setSelectedPackage('PLATINUM')
+      else if (code.includes('GOLD')) setSelectedPackage('GOLD')
+      else if (code.includes('SILVER')) setSelectedPackage('SILVER')
+      else setSelectedPackage('FREE')
+    } else {
+      setSelectedPackage('FREE')
+    }
+    setIsOpen(true)
+  }
+
+  const closeRegisterModal = () => {
+    setIsOpen(false)
+    setSelectedPackage('FREE')
+  }
 
   useEffect(() => {
-    const handleOpenEvent = () => setIsOpen(true)
-    const handleCloseEvent = () => setIsOpen(false)
+    const handleOpenEvent = (e: any) => {
+      openRegisterModal(e.detail?.packageCode)
+    }
+    const handleCloseEvent = () => closeRegisterModal()
 
     window.addEventListener('open-register-modal', handleOpenEvent)
     window.addEventListener('close-register-modal', handleCloseEvent)
@@ -28,7 +48,9 @@ export function RegisterModalProvider({ children }: { children: React.ReactNode 
   }, [])
 
   return (
-    <RegisterModalContext.Provider value={{ isOpen, openRegisterModal, closeRegisterModal }}>
+    <RegisterModalContext.Provider
+      value={{ isOpen, selectedPackage, openRegisterModal, closeRegisterModal, setSelectedPackage }}
+    >
       {children}
     </RegisterModalContext.Provider>
   )
@@ -37,11 +59,17 @@ export function RegisterModalProvider({ children }: { children: React.ReactNode 
 export function useRegisterModal() {
   const context = useContext(RegisterModalContext)
   if (!context) {
-    // Fallback if used outside provider
     return {
       isOpen: false,
-      openRegisterModal: () => window.dispatchEvent(new CustomEvent('open-register-modal')),
-      closeRegisterModal: () => window.dispatchEvent(new CustomEvent('close-register-modal')),
+      selectedPackage: 'FREE',
+      openRegisterModal: (packageCode?: any) => {
+        const code = typeof packageCode === 'string' ? packageCode : undefined
+        window.dispatchEvent(new CustomEvent('open-register-modal', { detail: { packageCode: code } }))
+      },
+      closeRegisterModal: () => {
+        window.dispatchEvent(new CustomEvent('close-register-modal'))
+      },
+      setSelectedPackage: () => {},
     }
   }
   return context

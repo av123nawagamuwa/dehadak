@@ -66,6 +66,8 @@ interface FormData {
   birthDay: string
   religion: string
   ethnicity: string
+  caste: string
+  casteOther: string
   height: string
   civilStatus: string
   country: string
@@ -118,6 +120,8 @@ const initialForm: FormData = {
   birthDay: '',
   religion: '',
   ethnicity: '',
+  caste: '',
+  casteOther: '',
   height: '',
   civilStatus: '',
   country: '',
@@ -172,6 +176,8 @@ function mapProfileToFormData(profile: Record<string, any>): FormData {
     birthDay: profile.birth_day || '',
     religion: profile.religion || '',
     ethnicity: profile.ethnicity || '',
+    caste: profile.caste || '',
+    casteOther: profile.caste_other || '',
     height: profile.height || '',
     civilStatus: profile.civil_status || '',
     country: profile.country || '',
@@ -285,6 +291,40 @@ export default function ProfileCreation() {
   const horoscopeInputRef = useRef<HTMLInputElement | null>(null)
   const translatedSteps = steps.map((step) => ({ label: t(`profileCreation.steps.${step.key}`) }))
 
+  const [casteOptions, setCasteOptions] = useState<Array<{ code: string; name_en: string; name_si: string }>>([
+    { code: 'prefer_not_to_say', name_en: 'Prefer not to say', name_si: 'ප්‍රකාශ කිරීමට අකමැතිය' },
+    { code: 'not_applicable', name_en: 'Not applicable', name_si: 'අදාළ නොවේ' },
+    { code: 'bathgama', name_en: 'Bathgama', name_si: 'බත්ගම' },
+    { code: 'berava', name_en: 'Berava', name_si: 'බෙරව' },
+    { code: 'durava', name_en: 'Durava', name_si: 'දුරාව' },
+    { code: 'govigama', name_en: 'Govigama (Goyigama)', name_si: 'ගොවිගම (ගොයිගම)' },
+    { code: 'karaiyar', name_en: 'Karaiyar', name_si: 'කරයියාර්' },
+    { code: 'karava', name_en: 'Karava', name_si: 'කරාව' },
+    { code: 'koviyar', name_en: 'Koviyar', name_si: 'කොවියර්' },
+    { code: 'mukkuvar', name_en: 'Mukkuvar', name_si: 'මුක්කුවර්' },
+    { code: 'nalavar', name_en: 'Nalavar', name_si: 'නලවර්' },
+    { code: 'navandanna', name_en: 'Navandanna', name_si: 'නවන්දන්න' },
+    { code: 'pallar', name_en: 'Pallar', name_si: 'පල්ලර්' },
+    { code: 'paraiyar', name_en: 'Paraiyar', name_si: 'පරයියාර්' },
+    { code: 'radala', name_en: 'Radala', name_si: 'රදළ' },
+    { code: 'rada', name_en: 'Rada', name_si: 'රදාව' },
+    { code: 'salagama', name_en: 'Salagama', name_si: 'සලාගම' },
+    { code: 'vahumpura', name_en: 'Vahumpura', name_si: 'වහුම්පුර' },
+    { code: 'vellalar', name_en: 'Vellalar', name_si: 'වෙල්ලාලර්' },
+    { code: 'other', name_en: 'Other — please specify', name_si: 'වෙනත් — කරුණාකර සඳහන් කරන්න' },
+  ])
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/lookup/caste-options`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.casteOptions && data.casteOptions.length > 0) {
+          setCasteOptions(data.casteOptions)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     if (!isEditMode) {
       return
@@ -316,6 +356,8 @@ export default function ProfileCreation() {
 
         setFormData(mapProfileToFormData(data))
         setPhoneVerified(true)
+
+
       } catch (error) {
         console.error(error)
         setVerificationMessage('Unable to load your profile for editing.')
@@ -383,7 +425,10 @@ export default function ProfileCreation() {
 
         if (profileRes.ok) {
           await uploadSelectedFiles(token)
-          alert(profileData.message || 'Profile updated successfully')
+
+
+
+          alert(profileData.message || 'Profile and matching preferences updated successfully')
           navigate('/profile')
         } else {
           alert(profileData.error || 'Failed to update profile')
@@ -450,9 +495,7 @@ export default function ProfileCreation() {
 
     if (photoFiles.length > 0) {
       const photoFormData = new FormData()
-      photoFiles.slice(0, 6).forEach((file) => {
-        photoFormData.append('photos', file)
-      })
+      photoFormData.append('photos', photoFiles[0])
 
       uploadTasks.push(fetch(`${API_BASE_URL}/api/profile/photos`, {
         method: 'POST',
@@ -586,34 +629,31 @@ export default function ProfileCreation() {
   }
 
   const handlePhotoFilesSelected = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
+    const file = event.target.files?.[0]
     event.target.value = ''
 
-    if (files.length === 0) {
+    if (!file) {
       return
     }
 
-    const availableSlots = Math.max(0, 6 - formData.photos.length)
-    const selectedFiles = files.slice(0, availableSlots)
-
     try {
-      const uploadedPhotos = await Promise.all(selectedFiles.map((file) => readFileAsDataUrl(file)))
-      setPhotoFiles((prev) => [...prev, ...selectedFiles])
+      const uploadedPhoto = await readFileAsDataUrl(file)
+      setPhotoFiles([file])
       setFormData((prev) => ({
         ...prev,
-        photos: [...prev.photos, ...uploadedPhotos],
+        photos: [uploadedPhoto],
       }))
     } catch (error) {
       console.error(error)
-      alert('Unable to load one or more photos from your device.')
+      alert('Unable to load photo from your device.')
     }
   }
 
-  const removePhoto = (index: number) => {
-    setPhotoFiles((prev) => prev.filter((_, i) => i !== index))
+  const removePhoto = () => {
+    setPhotoFiles([])
     setFormData((prev) => ({
       ...prev,
-      photos: prev.photos.filter((_, i) => i !== index),
+      photos: [],
     }))
   }
 
@@ -806,6 +846,39 @@ export default function ProfileCreation() {
                 <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">Caste (Optional)</label>
+            <Select
+              value={formData.caste || ''}
+              onValueChange={(v) => {
+                updateField('caste', v)
+                if (v !== 'other') {
+                  updateField('casteOther', '')
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select caste (optional)" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[220px]">
+                {casteOptions.map((opt) => (
+                  <SelectItem key={opt.code} value={opt.code}>
+                    {opt.name_en}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {formData.caste === 'other' && (
+              <Input
+                type="text"
+                maxLength={100}
+                placeholder="Please specify your caste..."
+                value={formData.casteOther || ''}
+                onChange={(e) => updateField('casteOther', e.target.value)}
+                className="mt-2 text-xs"
+              />
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">Height</label>
@@ -1330,9 +1403,9 @@ export default function ProfileCreation() {
             <Camera className="w-6 h-6 text-gold" />
           </div>
           <div>
-            <h3 className="text-xl font-semibold">Upload Photos</h3>
-            <p className="text-sm text-muted-foreground">
-              Add 3-6 photos to increase your chances
+            <h3 className="text-xl font-semibold text-[#1C1412]">Profile Photo</h3>
+            <p className="text-sm text-[#735A51]">
+              Upload a single, elegant portrait photograph for your matrimonial profile
             </p>
           </div>
         </div>
@@ -1340,55 +1413,88 @@ export default function ProfileCreation() {
         <input
           ref={photoInputRef}
           type="file"
-          accept="image/*"
-          multiple
+          accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={handlePhotoFilesSelected}
         />
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {formData.photos.map((photo, index) => (
-            <div
-              key={index}
-              className="relative aspect-square rounded-xl overflow-hidden border-2 border-gold shadow-md group"
-            >
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 rounded-2xl bg-[#FDFBF7] border border-[#EADFCF]">
+          {formData.photos.length > 0 ? (
+            <div className="relative w-44 h-44 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border-2 border-[#D4A72C] shadow-md group shrink-0 bg-white">
               <img
-                src={photo}
-                alt={`Upload ${index + 1}`}
+                src={formData.photos[0]}
+                alt="Profile"
                 className="w-full h-full object-cover"
               />
-              <button
-                onClick={() => removePhoto(index)}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-dark-bg/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePhotoUpload}
+                  className="px-3 py-1.5 rounded-full bg-white text-[#1C1412] text-xs font-semibold hover:bg-gold transition-colors"
+                >
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="w-8 h-8 rounded-full bg-red-600/90 text-white flex items-center justify-center hover:bg-red-700 transition-colors"
+                  title="Remove photo"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          ))}
-          {formData.photos.length < 6 && (
+          ) : (
             <button
+              type="button"
               onClick={handlePhotoUpload}
-              className="aspect-square rounded-xl border-2 border-dashed border-light-border hover:border-gold hover:bg-gold/5 flex flex-col items-center justify-center gap-2 transition-colors"
+              className="w-44 h-44 sm:w-48 sm:h-48 rounded-2xl border-2 border-dashed border-[#D4A72C]/50 hover:border-[#D4A72C] hover:bg-[#FAF4E6] flex flex-col items-center justify-center gap-3 transition-all cursor-pointer shrink-0 bg-white"
             >
-              <Upload className="w-8 h-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Upload</span>
+              <div className="w-12 h-12 rounded-full bg-[#FAF4E6] flex items-center justify-center text-[#D4A72C]">
+                <Upload className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-semibold text-[#1C1412]">Upload Photo</span>
+              <span className="text-[11px] text-[#735A51]">JPG, PNG or WEBP</span>
             </button>
           )}
-          {Array.from({ length: Math.max(0, 3 - formData.photos.length - 1) }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="aspect-square rounded-xl border-2 border-dashed border-light-border/50 flex flex-col items-center justify-center gap-2"
-            >
-              <Camera className="w-8 h-8 text-light-border" />
-              <span className="text-sm text-light-border">Photo Slot</span>
+
+          <div className="flex-1 space-y-3 text-center sm:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] text-[#A67C1E] text-xs font-semibold border border-[#EADFCF]">
+              <Camera className="w-3.5 h-3.5" />
+              <span>Single Profile Photo</span>
             </div>
-          ))}
+            <h4 className="text-base font-semibold text-[#1C1412]">
+              {formData.photos.length > 0 ? 'Profile Photo Selected' : 'Choose Your Best Portrait'}
+            </h4>
+            <p className="text-xs text-[#735A51] leading-relaxed">
+              A clear front-facing portrait gives members the best first impression. Only one authentic photo is required and displayed.
+            </p>
+            {formData.photos.length > 0 && (
+              <div className="flex items-center gap-3 pt-1 justify-center sm:justify-start">
+                <button
+                  type="button"
+                  onClick={handlePhotoUpload}
+                  className="text-xs font-semibold text-[#D4A72C] hover:underline"
+                >
+                  Change photo
+                </button>
+                <span className="text-[#D4A72C]/40">•</span>
+                <button
+                  type="button"
+                  onClick={removePhoto}
+                  className="text-xs font-medium text-red-600 hover:underline"
+                >
+                  Remove photo
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="mt-4 flex items-start gap-2 bg-amber-50 rounded-lg p-3">
-          <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-700">
-            Upload pictures to view pictures of your matches. Photos should be clear, recent, and appropriate.
+        <div className="mt-4 flex items-start gap-2 bg-[#FAF4E6] border border-[#EADFCF] rounded-xl p-3.5">
+          <AlertCircle className="w-4 h-4 text-[#D4A72C] shrink-0 mt-0.5" />
+          <p className="text-xs text-[#735A51]">
+            Photos should be clear, recent, and appropriate. You can adjust your photo privacy anytime in settings.
           </p>
         </div>
       </div>
@@ -1664,7 +1770,19 @@ export default function ProfileCreation() {
         ) : (
           <>
             <div className="mb-10">
-              <Stepper steps={translatedSteps} currentStep={currentStep} />
+              <Stepper
+                steps={translatedSteps}
+                currentStep={currentStep}
+                onStepClick={
+                  isEditMode
+                    ? (step) => {
+                        setDirection(step > currentStep ? 1 : -1)
+                        setCurrentStep(step)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }
+                    : undefined
+                }
+              />
             </div>
 
             <AnimatePresence mode="wait" custom={direction}>

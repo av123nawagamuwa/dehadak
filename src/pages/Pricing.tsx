@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Crown,
-  CheckCircle2,
   XCircle,
   Shield,
   CreditCard,
@@ -11,7 +10,9 @@ import {
   ChevronDown,
   ArrowRight,
   Check,
+  Loader2,
 } from 'lucide-react'
+import { API_BASE_URL } from '@/config'
 import { useRegisterModal } from '@/context/RegisterModalContext'
 import HeroBackgroundCarousel from '@/components/HeroBackgroundCarousel'
 import FinalCTASection from '@/components/home/FinalCTASection'
@@ -19,97 +20,111 @@ import FinalCTASection from '@/components/home/FinalCTASection'
 export default function PricingPage() {
   const { openRegisterModal } = useRegisterModal()
   const [currency, setCurrency] = useState<'lkr' | 'usd'>('lkr')
-  const [billingPeriod, setBillingPeriod] = useState<'3months' | '6months'>('3months')
   const [activeFaq, setActiveFaq] = useState<number | null>(null)
   const [paymentModalPlan, setPaymentModalPlan] = useState<any | null>(null)
+  const [ipayLoading, setIpayLoading] = useState(false)
+  const [paymentTab, setPaymentTab] = useState<'ipay' | 'bank'>('ipay')
 
   const plans = [
     {
       id: 'free',
+      code: 'FREE',
       name: 'Free Explorer',
       badge: 'Always Free',
+      packLabel: 'Lifetime Access',
       description: 'Ideal for creating your presence and receiving interest requests.',
+      monthlyLKR: 'Free',
+      monthlyUSD: 'Free',
       priceLKR: 'Free',
       priceUSD: 'Free',
       period: 'Lifetime Access',
+      durationMonths: 0,
       featured: false,
       buttonText: 'Create Free Account',
       features: [
-        { text: 'Create complete matrimony profile', included: true },
-        { text: 'Browse verified member directory', included: true },
-        { text: 'Receive unlimited interest requests', included: true },
-        { text: 'Send up to 3 interest requests/mo', included: true },
+        { text: 'Send up to 3 interest requests', included: true },
+        { text: 'Accept up to 3 received interests', included: true },
+        { text: 'Message up to 3 connections (unlimited chat)', included: true },
+        { text: 'Free Explorer profile badge', included: true },
         { text: 'Photo privacy protection controls', included: true },
-        { text: 'Direct contact details access', included: false },
-        { text: 'Horoscope compatibility analysis', included: false },
-        { text: 'Priority search ranking badge', included: false },
-        { text: 'Dedicated relationship manager', included: false },
+        { text: 'Compatibility Match % score', included: false },
+        { text: 'Direct contact phone number access', included: false },
       ],
     },
     {
       id: 'silver',
+      code: 'SILVER',
       name: 'Silver Match',
       badge: 'Value Pack',
+      packLabel: '3 Months Pack',
       description: 'Connect directly with sincere matches across Sri Lanka.',
-      priceLKR: billingPeriod === '3months' ? 'Rs. 4,500' : 'Rs. 7,500',
-      priceUSD: billingPeriod === '3months' ? '$18' : '$29',
-      period: billingPeriod === '3months' ? '3 Months Access' : '6 Months Access',
+      monthlyLKR: 'Rs. 500',
+      monthlyUSD: '$1.67',
+      priceLKR: 'Rs. 1,500',
+      priceUSD: '$5',
+      period: '3 Months Access',
+      durationMonths: 3,
       featured: false,
       buttonText: 'Get Silver Match',
       features: [
-        { text: 'Create complete matrimony profile', included: true },
-        { text: 'Browse verified member directory', included: true },
-        { text: 'Send up to 30 interest requests/mo', included: true },
-        { text: 'View 15 verified phone numbers', included: true },
+        { text: 'Send up to 30 interest requests', included: true },
+        { text: 'Accept up to 30 received interests', included: true },
+        { text: 'Message up to 30 connections (unlimited chat)', included: true },
+        { text: 'Full 8-point astrological & lifestyle match %', included: true },
+        { text: 'Silver Match profile badge', included: true },
         { text: 'Photo privacy protection controls', included: true },
-        { text: 'Basic Porondam matching check', included: true },
-        { text: 'Standard email & chat support', included: true },
-        { text: 'Top featured profile highlight', included: false },
-        { text: 'Dedicated relationship manager', included: false },
+        { text: 'Direct contact phone number access', included: false },
       ],
     },
     {
       id: 'gold',
+      code: 'GOLD',
       name: 'Gold VIP',
       badge: 'Most Popular',
+      packLabel: '4 Months VIP',
       description: 'The premier choice for serious marriage seekers and families.',
-      priceLKR: billingPeriod === '3months' ? 'Rs. 7,500' : 'Rs. 12,000',
-      priceUSD: billingPeriod === '3months' ? '$29' : '$49',
-      period: billingPeriod === '3months' ? '3 Months Access' : '6 Months Access',
+      monthlyLKR: 'Rs. 600',
+      monthlyUSD: '$2.00',
+      priceLKR: 'Rs. 2,400',
+      priceUSD: '$8',
+      period: '4 Months Access',
+      durationMonths: 4,
       featured: true,
       buttonText: 'Upgrade to Gold VIP',
       features: [
-        { text: 'Create complete matrimony profile', included: true },
-        { text: 'Browse verified member directory', included: true },
-        { text: 'Unlimited interest requests', included: true },
-        { text: 'View 50 verified phone numbers', included: true },
-        { text: 'Full 20 Porondam Horoscope Reports', included: true },
-        { text: 'Gold Verified & VIP Profile Badge', included: true },
+        { text: 'Send up to 50 interest requests', included: true },
+        { text: 'Accept up to 50 received interests', included: true },
+        { text: 'Message up to 50 connections (unlimited chat)', included: true },
+        { text: 'Full 8-point astrological & lifestyle match %', included: true },
+        { text: 'Gold VIP luxury gold profile badge', included: true },
         { text: 'Priority placement in Search Results', included: true },
-        { text: 'Direct SMS & WhatsApp alerts', included: true },
-        { text: 'Dedicated relationship manager', included: false },
+        { text: 'Direct contact phone number access', included: false },
       ],
     },
     {
       id: 'platinum',
+      code: 'PLATINUM',
       name: 'Royal Platinum',
-      badge: 'Elite Concierge',
-      description: 'Personalized matchmaking service with an astrologer & relationship manager.',
-      priceLKR: billingPeriod === '3months' ? 'Rs. 18,000' : 'Rs. 30,000',
-      priceUSD: billingPeriod === '3months' ? '$69' : '$110',
-      period: billingPeriod === '3months' ? '3 Months Access' : '6 Months Access',
+      badge: 'Elite Distinction',
+      packLabel: '6 Months Elite',
+      description: 'Personalized matchmaking service with direct verified phone numbers.',
+      monthlyLKR: 'Rs. 800',
+      monthlyUSD: '$2.67',
+      priceLKR: 'Rs. 4,800',
+      priceUSD: '$16',
+      period: '6 Months Access',
+      durationMonths: 6,
       featured: false,
       buttonText: 'Join Royal Platinum',
       features: [
-        { text: 'All Gold VIP features included', included: true },
-        { text: 'Unlimited phone numbers reveal', included: true },
-        { text: 'Dedicated Senior Relationship Manager', included: true },
-        { text: 'Handpicked weekly match proposals', included: true },
-        { text: 'Professional Astrologer Consultation', included: true },
-        { text: 'Parent-to-Parent meeting coordination', included: true },
-        { text: 'Complete background check reports', included: true },
-        { text: 'Confidential VIP matchmaking tier', included: true },
-        { text: '100% Guaranteed family introductions', included: true },
+        { text: 'Send up to 150 interest requests', included: true },
+        { text: 'Accept up to 150 received interests', included: true },
+        { text: 'Message up to 150 connections (unlimited chat)', included: true },
+        { text: 'Top of the page search priority (Ranked #1 on Search page)', included: true, highlight: true },
+        { text: 'Direct verified contact phone number reveal', included: true },
+        { text: 'Full 8-point astrological & lifestyle match %', included: true },
+        { text: 'Royal Platinum regal badge & priority styling', included: true },
+        { text: 'Top featured profile placement', included: true },
       ],
     },
   ]
@@ -138,10 +153,67 @@ export default function PricingPage() {
   ]
 
   const handleSelectPlan = (plan: any) => {
+    const isLoggedIn = !!localStorage.getItem('dehadak_auth')
     if (plan.id === 'free') {
-      openRegisterModal()
+      openRegisterModal('FREE')
+    } else if (!isLoggedIn) {
+      // Guest user clicked a paid plan -> open 2-step registration with the selected package!
+      openRegisterModal(plan.code)
     } else {
+      // Logged in user -> open checkout modal with iPay and Bank options
       setPaymentModalPlan(plan)
+      setPaymentTab('ipay')
+    }
+  }
+
+  const handleIpayCheckout = async (plan: any) => {
+    setIpayLoading(true)
+    try {
+      const token = localStorage.getItem('dehadak_auth')
+      if (!token) {
+        setPaymentModalPlan(null)
+        openRegisterModal(plan.code)
+        return
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/payments/ipay/initiate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          packageCode: plan.code,
+          returnUrl: `${window.location.origin}/payment-success`,
+          cancelUrl: `${window.location.origin}/pricing`,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data.formFields || !data.checkoutUrl) {
+        throw new Error(data.error || 'Failed to initiate iPay checkout.')
+      }
+
+      // Build hidden HTML form and submit to iPay
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = data.checkoutUrl
+      form.style.display = 'none'
+
+      Object.entries(data.formFields).forEach(([key, val]) => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = String(val ?? '')
+        form.appendChild(input)
+      })
+
+      document.body.appendChild(form)
+      form.submit()
+    } catch (err: any) {
+      console.error('iPay initiate error:', err)
+      alert(err.message || 'Could not connect to iPay payment gateway.')
+      setIpayLoading(false)
     }
   }
 
@@ -217,31 +289,6 @@ export default function PricingPage() {
                   🌐 USD (Expat / Global)
                 </button>
               </div>
-
-              {/* Billing Duration */}
-              <div className="inline-flex p-1 rounded-full bg-black/40 border border-white/15 backdrop-blur-md shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => setBillingPeriod('3months')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-                    billingPeriod === '3months' ? 'bg-[#E5A93C] text-[#1C1412] shadow-sm' : 'text-white/80 hover:text-white'
-                  }`}
-                >
-                  3 Months
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBillingPeriod('6months')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    billingPeriod === '6months' ? 'bg-[#E5A93C] text-[#1C1412] shadow-sm' : 'text-white/80 hover:text-white'
-                  }`}
-                >
-                  <span>6 Months</span>
-                  <span className="text-[10px] uppercase font-extrabold bg-[#10B981] text-white px-1.5 py-0.5 rounded-full">
-                    Save 35%
-                  </span>
-                </button>
-              </div>
             </motion.div>
           </div>
         </HeroBackgroundCarousel>
@@ -279,7 +326,7 @@ export default function PricingPage() {
                 )}
 
                 <div>
-                  <div className="mt-2">
+                  <div className="mt-2 min-h-[58px]">
                     <h3 className={`font-serif text-xl font-bold ${isGold ? 'text-white' : 'text-[#1C1412]'}`}>
                       {plan.name}
                     </h3>
@@ -288,29 +335,76 @@ export default function PricingPage() {
                     </p>
                   </div>
 
-                  {/* Price */}
-                  <div className="my-6 pb-6 border-b border-gray-100 dark:border-white/10">
-                    <div className="flex items-baseline gap-1">
-                      <span className={`font-serif text-3xl sm:text-4xl font-extrabold ${isGold ? 'text-[#F7D878]' : 'text-[#1C1412]'}`}>
-                        {currency === 'lkr' ? plan.priceLKR : plan.priceUSD}
+                  {/* Poruwa-style Monthly Price & Total Cost Section */}
+                  <div className={`my-5 p-4 rounded-2xl border transition-all ${
+                    isGold
+                      ? 'bg-black/35 border-[#E5A93C]/35 text-white'
+                      : 'bg-[#FAF6F0] border-[#EADFCF] text-[#1C1412]'
+                  }`}>
+                    {/* Small duration/plan label above monthly price */}
+                    <div className="mb-1">
+                      <span className={`text-[11px] font-semibold tracking-wide ${
+                        isGold ? 'text-[#F7D878]' : 'text-[#9B6B15]'
+                      }`}>
+                        {plan.packLabel}
                       </span>
                     </div>
-                    <p className={`text-[11px] font-semibold mt-1 ${isGold ? 'text-[#F7D878]/80' : 'text-[#9B6B15]'}`}>
-                      {plan.period}
-                    </p>
+
+                    {/* Main Monthly Price Focus */}
+                    <div className="flex items-baseline gap-1 mt-0.5 mb-3">
+                      <span className={`font-serif text-3xl sm:text-4xl font-extrabold tracking-tight ${
+                        isGold ? 'text-[#F7D878]' : 'text-[#1C1412]'
+                      }`}>
+                        {currency === 'lkr' ? plan.monthlyLKR : plan.monthlyUSD}
+                      </span>
+                      {plan.durationMonths > 0 && (
+                        <span className={`text-xs font-semibold ${
+                          isGold ? 'text-[#FAF6F0]/75' : 'text-gray-500'
+                        }`}>
+                          /month
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Side-by-side Total cost and Duration */}
+                    <div className={`pt-2.5 border-t text-xs space-y-1.5 ${
+                      isGold ? 'border-white/10' : 'border-[#EADFCF]'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className={isGold ? 'text-[#FAF6F0]/70' : 'text-gray-500'}>
+                          Total cost
+                        </span>
+                        <span className={`font-bold ${isGold ? 'text-[#F7D878]' : 'text-[#1C1412]'}`}>
+                          {currency === 'lkr' ? plan.priceLKR : plan.priceUSD}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className={isGold ? 'text-[#FAF6F0]/70' : 'text-gray-500'}>
+                          Duration
+                        </span>
+                        <span className={`font-semibold ${isGold ? 'text-white' : 'text-[#1C1412]'}`}>
+                          {plan.period}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Features List */}
                   <ul className="space-y-3 mb-8">
-                    {plan.features.map((feat) => (
+                    {plan.features.map((feat: any) => (
                       <li key={feat.text} className="flex items-start gap-2.5 text-xs">
                         {feat.included ? (
-                          <Check className={`w-4 h-4 shrink-0 mt-0.5 ${isGold ? 'text-[#F7D878]' : 'text-emerald-600'}`} />
+                          <Check className={`w-4 h-4 shrink-0 mt-0.5 ${feat.highlight ? 'text-[#D4A72C]' : isGold ? 'text-[#F7D878]' : 'text-emerald-600'}`} />
                         ) : (
                           <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-gray-300 dark:text-gray-600" />
                         )}
-                        <span className={feat.included ? (isGold ? 'text-white' : 'text-[#1C1412]') : 'text-gray-400'}>
+                        <span className={feat.included ? (feat.highlight ? 'font-bold text-[#A67C1E] flex items-center gap-1.5 flex-wrap' : isGold ? 'text-white' : 'text-[#1C1412]') : 'text-gray-400'}>
                           {feat.text}
+                          {feat.highlight && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-md bg-[#FAF4E6] text-[#A67C1E] border border-[#EADFCF] font-bold uppercase tracking-wider">
+                              NEW
+                            </span>
+                          )}
                         </span>
                       </li>
                     ))}
@@ -458,40 +552,115 @@ export default function PricingPage() {
               </div>
 
               <div className="space-y-4 text-xs sm:text-sm text-[#1C1412]/80">
-                <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] space-y-2">
-                  <p className="font-bold text-[#1C1412] flex items-center gap-1.5">
-                    <Building className="w-4 h-4 text-[#9B6B15]" />
-                    <span>Direct Bank Deposit Details:</span>
-                  </p>
-                  <div className="text-xs space-y-1 font-mono text-[#1C1412]/90">
-                    <p><span className="font-semibold text-gray-500">Bank:</span> Commercial Bank PLC</p>
-                    <p><span className="font-semibold text-gray-500">Account Name:</span> Dehadak Matrimonial Services</p>
-                    <p><span className="font-semibold text-gray-500">Account Number:</span> 8009124456</p>
-                    <p><span className="font-semibold text-gray-500">Branch:</span> Colombo Super Grade</p>
+                {/* Method Tabs */}
+                <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTab('ipay')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      paymentTab === 'ipay'
+                        ? 'bg-[#1C1412] text-[#F7D878] shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <CreditCard className="w-3.5 h-3.5" />
+                    <span>iPay Gateway</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTab('bank')}
+                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      paymentTab === 'bank'
+                        ? 'bg-[#1C1412] text-[#F7D878] shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Building className="w-3.5 h-3.5" />
+                    <span>Bank Transfer</span>
+                  </button>
+                </div>
+
+                {paymentTab === 'ipay' ? (
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#1C1412] flex items-center gap-1.5">
+                          <Shield className="w-4 h-4 text-emerald-600" />
+                          <span>iPay by LOLC (Central Bank Certified)</span>
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                          Instant Activation
+                        </span>
+                      </div>
+                      <p className="text-xs text-[#1C1412]/75">
+                        Accepts Sri Lankan & International Visa, Mastercard, LankaQR, and iPay digital wallet.
+                      </p>
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <span className="px-2 py-0.5 rounded bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold">
+                          VISA
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-red-50 border border-red-200 text-red-700 text-[10px] font-bold">
+                          Mastercard
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold">
+                          LankaQR
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold">
+                          iPay
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleIpayCheckout(paymentModalPlan)}
+                      disabled={ipayLoading}
+                      className="btn-gold w-full py-3.5 rounded-xl font-bold text-xs sm:text-sm text-[#1C1412] shadow-gold hover:shadow-gold-lg flex items-center justify-center gap-2"
+                    >
+                      {ipayLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-[#1C1412]" />
+                          <span>Connecting to iPay Gateway...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-4 h-4 text-[#1C1412]" />
+                          <span>Pay {paymentModalPlan.priceLKR} with iPay</span>
+                          <ArrowRight className="w-4 h-4 ml-1 text-[#1C1412]" />
+                        </>
+                      )}
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] space-y-2">
+                      <p className="font-bold text-[#1C1412] flex items-center gap-1.5">
+                        <Building className="w-4 h-4 text-[#9B6B15]" />
+                        <span>Direct Bank Deposit Details:</span>
+                      </p>
+                      <div className="text-xs space-y-1 font-mono text-[#1C1412]/90">
+                        <p><span className="font-semibold text-gray-500">Bank:</span> Commercial Bank PLC</p>
+                        <p><span className="font-semibold text-gray-500">Account Name:</span> Dehadak Matrimonial Services</p>
+                        <p><span className="font-semibold text-gray-500">Account Number:</span> 8009124456</p>
+                        <p><span className="font-semibold text-gray-500">Branch:</span> Colombo Super Grade</p>
+                        <p><span className="font-semibold text-gray-500">Amount:</span> <strong className="text-[#9B6B15]">{paymentModalPlan.priceLKR}</strong></p>
+                      </div>
+                    </div>
 
-                <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] space-y-2">
-                  <p className="font-bold text-[#1C1412] flex items-center gap-1.5">
-                    <PhoneCall className="w-4 h-4 text-[#9B6B15]" />
-                    <span>Instant WhatsApp Activation:</span>
-                  </p>
-                  <p className="text-xs text-[#1C1412]/75">
-                    After completing payment, please WhatsApp your receipt/slip to <span className="font-bold text-[#9B6B15]">+94 77 123 4567</span> with your registered email for instant activation within 10 minutes.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPaymentModalPlan(null)
-                    openRegisterModal()
-                  }}
-                  className="btn-gold w-full py-3 rounded-xl font-bold text-xs sm:text-sm text-[#1C1412] shadow-gold hover:shadow-gold-lg flex items-center justify-center gap-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Register Profile & Proceed</span>
-                </button>
+                    <a
+                      href={`https://wa.me/94771234567?text=${encodeURIComponent(
+                        `Hello Dehadak Support, I would like to activate ${paymentModalPlan.name} (${paymentModalPlan.period}) via bank deposit.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setPaymentModalPlan(null)}
+                      className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 text-center transition-all shadow-sm"
+                    >
+                      <PhoneCall className="w-4 h-4" />
+                      <span>Send Slip via WhatsApp (+94 77 123 4567)</span>
+                    </a>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

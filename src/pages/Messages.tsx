@@ -15,6 +15,10 @@ import {
   ExternalLink,
 } from 'lucide-react'
 import { API_BASE_URL } from '@/config'
+import { getGenderAvatar } from '@/utils/avatar'
+import { cleanPhotoUrl } from '@/utils/imageUrl'
+import PackageBadge from '@/components/PackageBadge'
+import QuotaUpgradeModal from '@/components/QuotaUpgradeModal'
 
 interface Interest {
   id: number
@@ -23,11 +27,19 @@ interface Interest {
   location: string
   profession?: string
   religion?: string
+  gender?: string
   image: string
   time: string
   status: 'pending' | 'accepted' | 'declined'
   profileId?: number
   conversationId?: number
+}
+
+function getDisplayImage(photo?: string, gender?: string, isPrivate?: boolean): string {
+  const fallback = getGenderAvatar(gender)
+  if (isPrivate || !photo || !photo.trim()) return fallback
+  const cleaned = cleanPhotoUrl(photo)
+  return cleaned || fallback
 }
 
 interface MessagesPageProps {
@@ -68,6 +80,12 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
   const [showGuestPrompt, setShowGuestPrompt] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [quotaModal, setQuotaModal] = useState<{
+    isOpen: boolean
+    feature?: 'SEND_INTEREST' | 'ACCEPT_INTEREST' | 'MESSAGING_CONNECTION' | 'PREFERENCE_MATCH' | 'CONTACT_REVEAL'
+    packageCode?: string
+    message?: string
+  }>({ isOpen: false })
 
   useEffect(() => {
     fetchData()
@@ -139,15 +157,17 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
           const data = await res.json()
           if (data.conversations && data.conversations.length > 0) {
             setConversations(data.conversations.map((c: any) => {
-              const isMale = String(c.gender || '').toLowerCase() === 'male' || String(c.gender || '').toLowerCase() === 'groom'
               return {
                 id: c.id,
-                name: c.name || 'Verified Member',
+                name: c.name || 'Member',
                 lastMessage: c.last_message || 'Conversation started',
                 time: formatTimeAgo(c.last_message_at || c.created_at),
                 unread: Number(c.unread_count || 0),
-                image: c.photo || (isMale ? '/profile-male-1.jpg' : '/profile-female-1.jpg'),
+                image: getDisplayImage(c.photo, c.gender, false),
+                gender: c.gender,
                 otherUserId: c.other_user_id,
+                packageCode: c.package_code,
+                packageName: c.package_badge,
               }
             }))
           } else {
@@ -160,16 +180,16 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
           const data = await res.json()
           if (data.interests && data.interests.length > 0) {
             setReceivedInterests(data.interests.map((i: any) => {
-              const isMale = String(i.gender || '').toLowerCase() === 'male' || String(i.gender || '').toLowerCase() === 'groom'
               return {
                 id: i.id,
                 profileId: i.profile_id,
-                name: `${i.first_name || ''} ${i.last_name || ''}`.trim() || 'Verified Member',
+                name: `${i.first_name || ''} ${i.last_name || ''}`.trim() || 'Member',
                 age: Number(new Date().getFullYear() - Number(i.birth_year || (new Date().getFullYear() - 26))),
                 location: [i.district, i.city, i.country].filter(Boolean).join(', ') || 'Sri Lanka',
                 profession: i.profession || 'Professional',
                 religion: i.religion || 'Buddhist',
-                image: i.photo || (isMale ? '/profile-male-1.jpg' : '/profile-female-1.jpg'),
+                gender: i.gender,
+                image: getDisplayImage(i.photo, i.gender, i.photo_private),
                 time: formatTimeAgo(i.created_at),
                 status: i.status,
               }
@@ -184,16 +204,16 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
           const data = await res.json()
           if (data.interests && data.interests.length > 0) {
             setSentInterests(data.interests.map((i: any) => {
-              const isMale = String(i.gender || '').toLowerCase() === 'male' || String(i.gender || '').toLowerCase() === 'groom'
               return {
                 id: i.id,
                 profileId: i.profile_id,
-                name: `${i.first_name || ''} ${i.last_name || ''}`.trim() || 'Verified Member',
+                name: `${i.first_name || ''} ${i.last_name || ''}`.trim() || 'Member',
                 age: Number(new Date().getFullYear() - Number(i.birth_year || (new Date().getFullYear() - 26))),
                 location: [i.district, i.city, i.country].filter(Boolean).join(', ') || 'Sri Lanka',
                 profession: i.profession || 'Professional',
                 religion: i.religion || 'Buddhist',
-                image: i.photo || (isMale ? '/profile-male-2.jpg' : '/profile-female-2.jpg'),
+                gender: i.gender,
+                image: getDisplayImage(i.photo, i.gender, i.photo_private),
                 time: formatTimeAgo(i.created_at),
                 status: i.status,
               }
@@ -229,6 +249,14 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
     }
 
     const data = await response.json().catch(() => ({}))
+    if (response.status === 403 && data.code === 'PACKAGE_LIMIT_REACHED') {
+      setQuotaModal({
+        isOpen: true,
+        feature: 'ACCEPT_INTEREST',
+        message: data.message || data.error || 'Connection cannot be established because acceptance limit has been reached.',
+      })
+      return
+    }
     setErrorMessage(data.error || 'Unable to accept request')
   }
 
@@ -251,6 +279,31 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
 
     const data = await response.json().catch(() => ({}))
     setErrorMessage(data.error || 'Unable to decline request')
+  }
+
+  const handleCancelInterest = async (interestId: number) => {
+    const token = getToken()
+    if (!token) {
+      setShowGuestPrompt(true)
+      return
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/interests/${interestId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      })
+
+      if (response.ok) {
+        setSentInterests((prev) => prev.filter((i) => i.id !== interestId))
+      } else {
+        const data = await response.json().catch(() => ({}))
+        setErrorMessage(data.error || 'Unable to cancel interest request')
+      }
+    } catch (err) {
+      console.error('Cancel interest error:', err)
+      setErrorMessage('Unable to cancel interest request')
+    }
   }
 
   const fetchMessages = async (id: number) => {
@@ -308,6 +361,14 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
         fetchMessages(selectedChat)
       } else {
         const data = await res.json().catch(() => ({}))
+        if (res.status === 403 && data.code === 'PACKAGE_LIMIT_REACHED') {
+          setQuotaModal({
+            isOpen: true,
+            feature: 'MESSAGING_CONNECTION',
+            message: data.message || data.error || 'Free Explorer allows messaging only your 3 most recently active connections. Upgrade to unlock this conversation.',
+          })
+          return
+        }
         setErrorMessage(data.error || 'Unable to send message')
       }
     } catch (err) {
@@ -421,6 +482,9 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                           src={conv.image}
                           alt={conv.name}
                           className="w-12 h-12 rounded-full object-cover border border-[#EADFCF]"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getGenderAvatar(conv.gender)
+                          }}
                         />
                         {conv.unread > 0 && (
                           <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse shadow-sm">
@@ -457,12 +521,17 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                         <ChevronRight className="w-5 h-5 rotate-180" />
                       </button>
                       <img
-                        src={activeConv?.image || '/profile-female-1.jpg'}
+                        src={activeConv?.image || getGenderAvatar(activeConv?.gender)}
                         alt={activeConv?.name || 'Chat'}
                         className="w-10 h-10 rounded-full object-cover border border-[#EADFCF]"
                       />
                       <div>
-                        <span className="font-bold text-sm text-[#1C1412]">{activeConv?.name || 'Verified Member'}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-bold text-sm text-[#1C1412]">{activeConv?.name || 'Verified Member'}</span>
+                          {activeConv?.packageCode && (
+                            <PackageBadge code={activeConv.packageCode} name={activeConv.packageName} size="sm" />
+                          )}
+                        </div>
                         <div className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
                           <Shield className="w-3.5 h-3.5" />
                           <span>Mutual Connection</span>
@@ -554,6 +623,9 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                           src={interest.image}
                           alt={interest.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getGenderAvatar(interest.gender)
+                          }}
                         />
                       </div>
                       <div className="space-y-1">
@@ -655,6 +727,9 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                           src={interest.image}
                           alt={interest.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getGenderAvatar(interest.gender)
+                          }}
                         />
                       </div>
                       <div className="space-y-1">
@@ -684,10 +759,20 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
 
                     <div className="flex items-center gap-2">
                       {interest.status === 'pending' && (
-                        <span className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>Pending Response</span>
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>Pending Response</span>
+                          </span>
+                          <button
+                            onClick={() => handleCancelInterest(interest.id)}
+                            className="px-3.5 py-1.5 rounded-full bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Cancel and release interest request"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Cancel</span>
+                          </button>
+                        </div>
                       )}
                       {interest.status === 'accepted' && (
                         <div className="flex items-center gap-2">
@@ -766,6 +851,14 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
         {isLoading && (
           <p className="mt-4 text-sm text-muted-foreground">Loading connections...</p>
         )}
+
+        <QuotaUpgradeModal
+          isOpen={quotaModal.isOpen}
+          onClose={() => setQuotaModal({ isOpen: false })}
+          feature={quotaModal.feature}
+          packageCode={quotaModal.packageCode}
+          message={quotaModal.message}
+        />
       </div>
     </div>
   )

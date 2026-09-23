@@ -8,9 +8,10 @@ interface Step {
 interface StepperProps {
   steps: Step[]
   currentStep: number
+  onStepClick?: (stepNumber: number) => void
 }
 
-export default function Stepper({ steps, currentStep }: StepperProps) {
+export default function Stepper({ steps, currentStep, onStepClick }: StepperProps) {
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="flex items-center justify-between">
@@ -22,12 +23,15 @@ export default function Stepper({ steps, currentStep }: StepperProps) {
           return (
             <div key={step.label} className="flex flex-1 items-center">
               {/* Step Node */}
-              <div className="flex flex-col items-center">
+              <div
+                onClick={() => onStepClick && onStepClick(stepNumber)}
+                className={`flex flex-col items-center ${onStepClick ? 'cursor-pointer group' : ''}`}
+              >
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                     isCompleted || isActive
                       ? 'bg-gold text-white shadow-gold'
-                      : 'bg-light-surface border-2 border-light-border text-muted-foreground'
+                      : 'bg-light-surface border-2 border-light-border text-muted-foreground group-hover:border-gold/60'
                   } ${isActive ? 'scale-110' : ''}`}
                 >
                   {isCompleted ? (

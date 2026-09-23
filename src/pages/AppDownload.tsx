@@ -215,7 +215,7 @@ export default function AppDownload() {
                   <div className="rounded-2xl bg-white border border-[#E5A93C]/30 p-3 shadow-md mb-3">
                     <div className="relative rounded-xl overflow-hidden h-36 bg-[#281D1A] mb-2.5">
                       <img
-                        src="/profile-female-1.jpg"
+                        src="/avatars/female.png"
                         alt="Candidate Sample"
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -574,7 +574,7 @@ export default function AppDownload() {
               </p>
               <div className="rounded-2xl bg-white p-3 border border-[#EADFCF] shadow-inner space-y-2.5">
                 <div className="h-28 bg-[#1C1412] rounded-xl overflow-hidden relative flex items-center justify-center">
-                  <img src="/profile-male-1.jpg" alt="Profile sample" className="w-full h-full object-cover" />
+                  <img src="/avatars/male.png" alt="Profile sample" className="w-full h-full object-cover" />
                   <span className="absolute bottom-2 left-2 text-[10px] bg-black/60 text-[#F7D878] px-2 py-0.5 rounded font-bold">Kandy • 29 yrs</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px] font-bold text-[#1C1412]">

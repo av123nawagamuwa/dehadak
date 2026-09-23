@@ -13,33 +13,24 @@ import {
   Calendar,
   Edit3,
   Sparkles,
-  Crown,
   Moon,
   GraduationCap,
   FileText,
   Camera,
   CheckCircle2,
   Users,
+  Clock,
+  Utensils,
+  Wine,
+  Cigarette,
 } from 'lucide-react'
 import { API_BASE_URL } from '@/config'
+import { getGenderAvatar } from '@/utils/avatar'
 import EditProfileModal from '@/components/EditProfileModal'
+import PackageBadge from '@/components/PackageBadge'
+import MyPackageCard from '@/components/MyPackageCard'
 
-function cleanPhotoUrl(url: any): string {
-  if (!url) return ''
-  if (typeof url === 'string') {
-    if (url.startsWith('{')) {
-      try {
-        const parsed = JSON.parse(url)
-        return parsed.url || url
-      } catch (e) {
-        return url
-      }
-    }
-    return url
-  }
-  if (typeof url === 'object' && url.url) return url.url
-  return String(url)
-}
+import { cleanPhotoUrl } from '@/utils/imageUrl'
 
 type ProfileResponse = {
   id: number
@@ -62,8 +53,14 @@ type ProfileResponse = {
   drinking: string
   smoking: string
   food: string
+  dietary_habits?: string
+  dietary_habits_other?: string
+  drinking_habits?: string
+  smoking_habits?: string
   description: string
   plan: string
+  package_code?: string
+  package_badge?: string
   created_at: string
   phone?: string
   email?: string
@@ -71,6 +68,10 @@ type ProfileResponse = {
   birth_time?: string
   birth_city?: string
   adId?: string
+  photo_privacy?: boolean | number | null
+  verification_status?: string
+  verified?: boolean
+  is_verified?: boolean
   parent_info?: {
     father_religion?: string
     father_ethnicity?: string
@@ -96,6 +97,7 @@ type ProfileResponse = {
     privacy?: boolean
   } | null
   photos?: Array<any>
+  avatar_url?: string | null
 }
 
 function ProfileDetailCard({
@@ -147,6 +149,11 @@ export default function MyProfile() {
         if (response.status === 400 || response.status === 401) {
           localStorage.removeItem('dehadak_auth')
           navigate('/login', { replace: true, state: { from: '/profile' } })
+          return
+        }
+
+        if (response.status === 404) {
+          navigate('/profile-creation', { replace: true })
           return
         }
 
@@ -220,19 +227,13 @@ export default function MyProfile() {
     cleanLocation = `${profile.district}, Sri Lanka`
   }
 
-  const rawPhoto = profile.photos?.[0]?.url || profile.photos?.[0]
-  const cleanedPhotoPath = cleanPhotoUrl(rawPhoto)
-  const primaryPhoto = cleanedPhotoPath
-    ? (cleanedPhotoPath.startsWith('http') ? cleanedPhotoPath : `${API_BASE_URL}${cleanedPhotoPath}`)
-    : ''
+  const rawPhoto = profile.photos?.[0]?.url || profile.photos?.[0] || profile.avatar_url
+  const primaryPhoto = cleanPhotoUrl(rawPhoto)
 
-  const idNum = typeof profile.id === 'number' ? profile.id : parseInt(String(profile.id || '1'), 10) || 1
-  const isMale = String(profile.gender || '').toLowerCase() === 'male' || String(profile.gender || '').toLowerCase() === 'groom'
-  const malePortraits = ['/profile-male-1.jpg', '/profile-male-2.jpg', '/profile-male-3.jpg']
-  const femalePortraits = ['/profile-female-1.jpg', '/profile-female-2.jpg', '/profile-female-3.jpg']
-  const defaultPortraits = isMale ? malePortraits : femalePortraits
-  const fallbackPortrait = defaultPortraits[Math.abs(idNum) % defaultPortraits.length]
-  const displayPhoto = primaryPhoto || fallbackPortrait
+  const fallbackPortrait = getGenderAvatar(profile.gender)
+  const isPhotoPrivate = Boolean(profile.photo_privacy === 0 || profile.photo_privacy === false)
+  // When photo is private or absent, display official male/female avatar
+  const displayPhoto = (!isPhotoPrivate && primaryPhoto) ? primaryPhoto : fallbackPortrait
 
   const horoscopeFileUrl = profile.horoscope?.pdf_url
     ? (profile.horoscope.pdf_url.startsWith('http') ? profile.horoscope.pdf_url : `${API_BASE_URL}${profile.horoscope.pdf_url}`)
@@ -253,7 +254,8 @@ export default function MyProfile() {
               {fullName}
             </h1>
             <p className="mt-1 text-sm text-[#1C1412]/70">
-              Account ID: <span className="font-bold text-[#1C1412]">{profile.adId || `DH-${profile.id + 1000000000}`}</span> • Verified Member
+              Account ID: <span className="font-bold text-[#1C1412]">{profile.adId || `DH-${profile.id + 1000000000}`}</span>
+              {profile.verification_status === 'VERIFIED' && ' • Verified Member'}
             </p>
           </div>
 
@@ -288,20 +290,31 @@ export default function MyProfile() {
                 {/* Vignette */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                {/* Top Badges */}
+                {/* Package Badge (Free Explorer / Silver Match / Gold VIP / Royal Platinum) */}
                 <div className="absolute top-4 left-4 flex items-center gap-2 z-10">
-                  <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-[#F7D878] to-[#E5A93C] text-[#1C1412] text-xs font-bold shadow-md">
-                    <Crown className="w-3.5 h-3.5" />
-                    <span>{profile.plan ? profile.plan.toUpperCase() : 'STANDARD'}</span>
-                  </span>
+                  <PackageBadge
+                    code={profile.package_code}
+                    name={profile.package_badge}
+                    size="md"
+                  />
                 </div>
 
-                <div className="absolute top-4 right-4 z-10">
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold shadow-md">
-                    <BadgeCheck className="w-3.5 h-3.5" />
-                    <span>Verified Profile</span>
+                {/* Verified Profile Badge - ONLY shown if verification_status === 'VERIFIED' */}
+                {profile.verification_status === 'VERIFIED' ? (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500 text-white text-xs font-bold shadow-md">
+                      <BadgeCheck className="w-3.5 h-3.5" />
+                      <span>Verified Profile</span>
+                    </div>
                   </div>
-                </div>
+                ) : profile.verification_status === 'PENDING' ? (
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/90 text-white text-xs font-bold shadow-md backdrop-blur-sm">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Verification Pending</span>
+                    </div>
+                  </div>
+                ) : null}
 
                 {/* Name & Quick Info on Banner */}
                 <div className="relative z-10 text-white">
@@ -329,6 +342,9 @@ export default function MyProfile() {
                   <ProfileDetailCard icon={Users} label="Religion" value={profile.religion || 'Buddhist'} />
                   <ProfileDetailCard icon={User} label="Caste / Sect" value={profile.ethnicity || 'Not specified'} />
                   <ProfileDetailCard icon={Calendar} label="Date of Birth" value={[profile.birth_day, profile.birth_month, profile.birth_year].filter(Boolean).join('/') || 'Not provided'} />
+                  <ProfileDetailCard icon={Utensils} label="Dietary Habits" value={profile.dietary_habits === 'Other' ? (profile.dietary_habits_other || 'Other') : (profile.dietary_habits || profile.food || 'Not specified')} />
+                  <ProfileDetailCard icon={Wine} label="Drinking Habits" value={profile.drinking_habits || profile.drinking || 'Not specified'} />
+                  <ProfileDetailCard icon={Cigarette} label="Smoking Habits" value={profile.smoking_habits || profile.smoking || 'Not specified'} />
                   <ProfileDetailCard icon={Phone} label="Mobile Phone" value={profile.phone || 'Not provided'} />
                   <ProfileDetailCard icon={Mail} label="Email Address" value={profile.email || 'Not provided'} />
                 </div>
@@ -348,9 +364,12 @@ export default function MyProfile() {
 
           </div>
 
-          {/* Right Column (4 cols): Horoscope & Photos */}
+          {/* Right Column (4 cols): My Package, Horoscope & Photos */}
           <div className="lg:col-span-4 space-y-6">
             
+            {/* Live My Package Dashboard Widget */}
+            <MyPackageCard />
+
             {/* Horoscope & Astrology Card */}
             <div className="rounded-3xl border border-[#E5A93C]/35 bg-white p-6 shadow-card relative overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-[#F7D878] to-[#E5A93C] absolute top-0 left-0 right-0" />

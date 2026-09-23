@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
@@ -13,9 +13,96 @@ import {
   Heart,
   Moon,
   Sparkles,
+  FileCheck,
+  Trash2,
+  BadgeCheck,
+  Crown,
+  ArrowRight,
+  CreditCard,
+  Building,
+  PhoneCall,
 } from 'lucide-react'
 import { API_BASE_URL } from '@/config'
 import { useRegisterModal } from '@/context/RegisterModalContext'
+
+export interface PackageConfig {
+  code: string
+  name: string
+  priceLKR: number
+  priceDisplay: string
+  durationMonths: number
+  durationDisplay: string
+  interests: number
+  acceptInterests: number
+  messageConnections: number
+  matchPercent: boolean
+  contactReveal: boolean
+  topPriority: boolean
+  badge: string
+}
+
+export const PACKAGE_CONFIGS: Record<string, PackageConfig> = {
+  FREE: {
+    code: 'FREE',
+    name: 'Free Explorer',
+    priceLKR: 0,
+    priceDisplay: 'Free',
+    durationMonths: 0,
+    durationDisplay: 'Lifetime Access',
+    interests: 3,
+    acceptInterests: 3,
+    messageConnections: 3,
+    matchPercent: false,
+    contactReveal: false,
+    topPriority: false,
+    badge: 'Basic',
+  },
+  SILVER: {
+    code: 'SILVER',
+    name: 'Silver Match',
+    priceLKR: 1500,
+    priceDisplay: 'Rs. 1,500',
+    durationMonths: 3,
+    durationDisplay: '3 Months',
+    interests: 30,
+    acceptInterests: 30,
+    messageConnections: 30,
+    matchPercent: true,
+    contactReveal: false,
+    topPriority: false,
+    badge: 'Value Pack',
+  },
+  GOLD: {
+    code: 'GOLD',
+    name: 'Gold VIP',
+    priceLKR: 2400,
+    priceDisplay: 'Rs. 2,400',
+    durationMonths: 4,
+    durationDisplay: '4 Months',
+    interests: 50,
+    acceptInterests: 50,
+    messageConnections: 50,
+    matchPercent: true,
+    contactReveal: false,
+    topPriority: false,
+    badge: 'Most Popular',
+  },
+  PLATINUM: {
+    code: 'PLATINUM',
+    name: 'Royal Platinum',
+    priceLKR: 4800,
+    priceDisplay: 'Rs. 4,800',
+    durationMonths: 6,
+    durationDisplay: '6 Months',
+    interests: 150,
+    acceptInterests: 150,
+    messageConnections: 150,
+    matchPercent: true,
+    contactReveal: true,
+    topPriority: true,
+    badge: 'VIP Elite Distinction',
+  },
+}
 
 const districts = [
   'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
@@ -71,12 +158,54 @@ const zodiacSigns = [
   'Dhanu (Sagittarius)', 'Makara (Capricorn)', 'Kumbha (Aquarius)', 'Meena (Pisces)'
 ]
 
+export const dietaryHabitsOptions = [
+  'Vegetarian',
+  'Vegan',
+  'Pescatarian (fish, no other meat)',
+  'Non-vegetarian',
+  'Other',
+  'Prefer not to say',
+]
+
+export const drinkingHabitsOptions = [
+  'Never drink',
+  'Occasionally / Socially',
+  'Regularly',
+  'Previously drank, now stopped',
+  'Prefer not to say',
+]
+
+export const smokingHabitsOptions = [
+  'Never smoke',
+  'Occasionally / Socially',
+  'Regularly',
+  'Previously smoked, now stopped',
+  'Prefer not to say',
+]
+
 export default function RegisterModal() {
-  const { isOpen, closeRegisterModal } = useRegisterModal()
+  const { isOpen, closeRegisterModal, selectedPackage, setSelectedPackage } = useRegisterModal()
+
+  const [step, setStep] = useState<1 | 2>(1)
+  const [registeredAuthToken, setRegisteredAuthToken] = useState<string>('')
+  const [ipayLoading, setIpayLoading] = useState(false)
+  const [paymentTab, setPaymentTab] = useState<'ipay' | 'bank'>('ipay')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  const activePlanCode = selectedPackage || 'FREE'
+  const currentPlan = PACKAGE_CONFIGS[activePlanCode] || PACKAGE_CONFIGS.FREE
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1)
+      setError('')
+      setSuccess(false)
+      setIpayLoading(false)
+    }
+  }, [isOpen])
 
   // Form State
   const [fullName, setFullName] = useState('')
@@ -85,13 +214,56 @@ export default function RegisterModal() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
+  // Habits State
+  const [dietaryHabits, setDietaryHabits] = useState('')
+  const [dietaryHabitsOther, setDietaryHabitsOther] = useState('')
+  const [drinkingHabits, setDrinkingHabits] = useState('')
+  const [smokingHabits, setSmokingHabits] = useState('')
+
   const [gender, setGender] = useState('male') // male = Groom, female = Bride
   const [civilStatus, setCivilStatus] = useState('Never Married')
   const [age, setAge] = useState('24')
   const [dob, setDob] = useState('2000-01-01')
   const [height, setHeight] = useState("5'6\"")
   const [education, setEducation] = useState("Bachelor's Degree")
+  
+  // Caste State
   const [caste, setCaste] = useState('')
+  const [casteOther, setCasteOther] = useState('')
+  const [casteOptions, setCasteOptions] = useState<Array<{ code: string; name_en: string; name_si: string }>>([
+    { code: 'prefer_not_to_say', name_en: 'Prefer not to say', name_si: 'ප්‍රකාශ කිරීමට අකමැතිය' },
+    { code: 'not_applicable', name_en: 'Not applicable', name_si: 'අදාළ නොවේ' },
+    { code: 'bathgama', name_en: 'Bathgama', name_si: 'බත්ගම' },
+    { code: 'berava', name_en: 'Berava', name_si: 'බෙරව' },
+    { code: 'durava', name_en: 'Durava', name_si: 'දුරාව' },
+    { code: 'govigama', name_en: 'Govigama (Goyigama)', name_si: 'ගොවිගම (ගොයිගම)' },
+    { code: 'karaiyar', name_en: 'Karaiyar', name_si: 'කරයියාර්' },
+    { code: 'karava', name_en: 'Karava', name_si: 'කරාව' },
+    { code: 'koviyar', name_en: 'Koviyar', name_si: 'කොවියර්' },
+    { code: 'mukkuvar', name_en: 'Mukkuvar', name_si: 'මුක්කුවර්' },
+    { code: 'nalavar', name_en: 'Nalavar', name_si: 'නලවර්' },
+    { code: 'navandanna', name_en: 'Navandanna', name_si: 'නවන්දන්න' },
+    { code: 'pallar', name_en: 'Pallar', name_si: 'පල්ලර්' },
+    { code: 'paraiyar', name_en: 'Paraiyar', name_si: 'පරයියාර්' },
+    { code: 'radala', name_en: 'Radala', name_si: 'රදළ' },
+    { code: 'rada', name_en: 'Rada', name_si: 'රදාව' },
+    { code: 'salagama', name_en: 'Salagama', name_si: 'සලාගම' },
+    { code: 'vahumpura', name_en: 'Vahumpura', name_si: 'වහුම්පුර' },
+    { code: 'vellalar', name_en: 'Vellalar', name_si: 'වෙල්ලාලර්' },
+    { code: 'other', name_en: 'Other — please specify', name_si: 'වෙනත් — කරුණාකර සඳහන් කරන්න' },
+  ])
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/lookup/caste-options`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.casteOptions && data.casteOptions.length > 0) {
+          setCasteOptions(data.casteOptions)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const [religion, setReligion] = useState('Buddhist')
   const [district, setDistrict] = useState('Colombo')
   const [occupation, setOccupation] = useState('Software & IT')
@@ -102,6 +274,14 @@ export default function RegisterModal() {
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [publicPhoto, setPublicPhoto] = useState(true)
+
+  // Identity Verification (Optional NIC)
+  const [nicNumber, setNicNumber] = useState('')
+  const [nicFrontFile, setNicFrontFile] = useState<File | null>(null)
+  const [nicFrontPreview, setNicFrontPreview] = useState<string | null>(null)
+  const [nicBackFile, setNicBackFile] = useState<File | null>(null)
+  const [nicBackPreview, setNicBackPreview] = useState<string | null>(null)
+  const [nicError, setNicError] = useState<string | null>(null)
 
   // Horoscope
   const [horoscopeRequired, setHoroscopeRequired] = useState(false)
@@ -116,6 +296,8 @@ export default function RegisterModal() {
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const horoscopeInputRef = useRef<HTMLInputElement>(null)
+  const nicFrontInputRef = useRef<HTMLInputElement>(null)
+  const nicBackInputRef = useRef<HTMLInputElement>(null)
 
   // Handle DOB change to calculate Age automatically
   const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,6 +331,45 @@ export default function RegisterModal() {
       const file = e.target.files[0]
       setHoroscopeFile(file)
       setHoroscopeFileName(file.name)
+    }
+  }
+
+  // Handle NIC file selection
+  const handleNicSelect = (side: 'front' | 'back', e: React.ChangeEvent<HTMLInputElement>) => {
+    setNicError(null)
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      if (file.size > 5 * 1024 * 1024) {
+        setNicError('Each document image must be under 5MB in size.')
+        return
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setNicError('Please upload a valid JPG, PNG, or WEBP image.')
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        if (side === 'front') {
+          setNicFrontFile(file)
+          setNicFrontPreview(ev.target?.result as string)
+        } else {
+          setNicBackFile(file)
+          setNicBackPreview(ev.target?.result as string)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const clearNic = (side: 'front' | 'back') => {
+    if (side === 'front') {
+      setNicFrontFile(null)
+      setNicFrontPreview(null)
+      if (nicFrontInputRef.current) nicFrontInputRef.current.value = ''
+    } else {
+      setNicBackFile(null)
+      setNicBackPreview(null)
+      if (nicBackInputRef.current) nicBackInputRef.current.value = ''
     }
   }
 
@@ -209,7 +430,9 @@ export default function RegisterModal() {
           birthMonth: String(birthDateObj.getMonth() + 1),
           birthDay: String(birthDateObj.getDate()),
           religion,
-          ethnicity: caste || 'Sinhalese',
+          caste: caste || null,
+          casteOther: caste === 'other' ? casteOther.trim() : null,
+          ethnicity: 'Sinhalese',
           height: height || "5'6\"",
           civilStatus: civilStatus || 'Never Married',
           country: locationType === 'foreign' ? (jobCountry || 'Abroad') : 'Sri Lanka',
@@ -217,10 +440,13 @@ export default function RegisterModal() {
           city: locationType === 'foreign' ? (jobCountry || 'Abroad') : district,
           visaType: locationType === 'foreign' ? 'Work Visa / PR' : 'Citizen',
           education: education || "Bachelor's Degree",
-          profession: occupation || 'Software & IT',
-          drinking: 'Never',
-          smoking: 'Never',
-          food: 'Non-Vegetarian',
+          drinking: drinkingHabits || 'Prefer not to say',
+          smoking: smokingHabits || 'Prefer not to say',
+          food: dietaryHabits === 'Other' && dietaryHabitsOther ? dietaryHabitsOther.trim() : (dietaryHabits || 'Prefer not to say'),
+          dietaryHabits,
+          dietaryHabitsOther: dietaryHabits === 'Other' ? dietaryHabitsOther.trim() : '',
+          drinkingHabits,
+          smokingHabits,
           differentlyAbled: false,
           horoscopeRequired,
           birthTime: horoscopeRequired ? birthTime : '',
@@ -231,7 +457,9 @@ export default function RegisterModal() {
           horoscopeBirthYear: String(birthDateObj.getFullYear()),
           horoscopeBirthMonth: String(birthDateObj.getMonth() + 1),
           horoscopeBirthDay: String(birthDateObj.getDate()),
-          horoscopePrivacy: !publicPhoto,
+          photoPrivacy: publicPhoto,
+          photo_privacy: publicPhoto ? 1 : 0,
+          horoscopePrivacy: false,
           photos: [],
         }),
       })
@@ -271,15 +499,94 @@ export default function RegisterModal() {
         }
       }
 
-      setSuccess(true)
-      setTimeout(() => {
-        closeRegisterModal()
-        window.location.href = '/profile'
-      }, 1200)
+      // 6. Upload Optional NIC Verification documents if provided
+      if (nicFrontFile && nicBackFile) {
+        try {
+          const nicFormData = new FormData()
+          if (nicNumber.trim()) nicFormData.append('nicNumber', nicNumber.trim())
+          nicFormData.append('front', nicFrontFile)
+          nicFormData.append('frontImage', nicFrontFile)
+          nicFormData.append('back', nicBackFile)
+          nicFormData.append('backImage', nicBackFile)
+          const nicRes = await fetch(`${API_BASE_URL}/api/profile/nic-verification`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: nicFormData,
+          })
+          if (!nicRes.ok) {
+            const errData = await nicRes.json().catch(() => ({}))
+            console.error('NIC verification upload failed:', errData)
+          }
+        } catch (nicErr) {
+          console.warn('NIC verification upload note:', nicErr)
+        }
+      }
+
+      if (selectedPackage && selectedPackage !== 'FREE') {
+        setRegisteredAuthToken(token)
+        setStep(2)
+        setError('')
+      } else {
+        setSuccess(true)
+        setTimeout(() => {
+          closeRegisterModal()
+          window.location.href = '/profile'
+        }, 1200)
+      }
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleIpayPayment = async () => {
+    setIpayLoading(true)
+    setError('')
+    try {
+      const token = registeredAuthToken || localStorage.getItem('dehadak_auth')
+      if (!token) {
+        throw new Error('Please login or register to complete payment.')
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/payments/ipay/initiate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          packageCode: selectedPackage || 'SILVER',
+          returnUrl: `${window.location.origin}/payment-success`,
+          cancelUrl: `${window.location.origin}/pricing`,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok || !data.formFields || !data.checkoutUrl) {
+        throw new Error(data.error || 'Failed to initialize iPay payment gateway.')
+      }
+
+      // Build hidden HTML form and submit to iPay checkout URL
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = data.checkoutUrl
+      form.style.display = 'none'
+
+      Object.entries(data.formFields).forEach(([key, val]) => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = key
+        input.value = String(val ?? '')
+        form.appendChild(input)
+      })
+
+      document.body.appendChild(form)
+      form.submit()
+    } catch (err: any) {
+      console.error('iPay payment initiation error:', err)
+      setError(err.message || 'Could not connect to iPay payment gateway.')
+      setIpayLoading(false)
     }
   }
 
@@ -318,12 +625,33 @@ export default function RegisterModal() {
                   />
                 </div>
                 <div>
-                  <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-                    <span>Register Free Profile</span>
-                    <Sparkles className="w-4 h-4 text-[#F7D878]" />
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                      <span>
+                        {step === 2
+                          ? 'Complete Payment & Activation'
+                          : selectedPackage !== 'FREE'
+                          ? `Register & Activate ${currentPlan.name}`
+                          : 'Register Free Profile'}
+                      </span>
+                      <Sparkles className="w-4 h-4 text-[#F7D878]" />
+                    </h2>
+                    {selectedPackage !== 'FREE' && (
+                      <span className={`px-2.5 py-0.5 text-[11px] font-bold tracking-wider uppercase rounded-full border ${
+                        step === 2 
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                          : 'bg-[#E5A93C]/20 text-[#F7D878] border-[#E5A93C]/40'
+                      }`}>
+                        Step {step} of 2
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#F7D878]/90 font-medium tracking-wide mt-0.5">
-                    Dehadak – Two Hearts, One Journey
+                    {step === 2
+                      ? `Account details saved! Activate your ${currentPlan.name} membership below.`
+                      : selectedPackage !== 'FREE'
+                      ? `${currentPlan.priceDisplay} • ${currentPlan.durationDisplay} • Complete profile to proceed to payment`
+                      : 'Dehadak – Two Hearts, One Journey'}
                   </p>
                 </div>
               </div>
@@ -341,12 +669,50 @@ export default function RegisterModal() {
           </div>
 
           {/* Subheader Intro */}
-          <div className="bg-[#FAF6F0] px-6 py-3.5 border-b border-[#EADFCF] text-xs sm:text-sm text-[#1C1412]/80 font-medium">
-            Please enter your complete details to set up your matrimony account. All verified profiles gain instant visibility.
-          </div>
+          {step === 1 ? (
+            selectedPackage !== 'FREE' ? (
+              <div className="bg-[#FAF6F0] px-6 py-3 border-b border-[#EADFCF] flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+                <div className="flex items-center gap-2 text-[#1C1412]">
+                  <Crown className="w-4 h-4 text-[#9B6B15] shrink-0" />
+                  <span>
+                    Selected Package: <strong className="text-[#9B6B15] font-bold">{currentPlan.name}</strong> ({currentPlan.priceDisplay} for {currentPlan.durationDisplay})
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-gray-500 font-semibold">Switch Plan:</span>
+                  {(['SILVER', 'GOLD', 'PLATINUM'] as const).map((code) => (
+                    <button
+                      key={code}
+                      type="button"
+                      onClick={() => setSelectedPackage(code)}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                        selectedPackage === code
+                          ? 'bg-[#E5A93C] text-[#1C1412]'
+                          : 'bg-white text-gray-700 border border-gray-200 hover:border-[#E5A93C]'
+                      }`}
+                    >
+                      {PACKAGE_CONFIGS[code].name.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-[#FAF6F0] px-6 py-3.5 border-b border-[#EADFCF] text-xs sm:text-sm text-[#1C1412]/80 font-medium">
+                Please enter your complete details to set up your matrimony account. Identity verification is optional and unlocks a verified trust badge after manual review.
+              </div>
+            )
+          ) : (
+            <div className="bg-emerald-50 px-6 py-3 border-b border-emerald-200 text-xs sm:text-sm text-emerald-900 font-medium flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Your profile has been created successfully. Now complete payment to activate.</span>
+              </div>
+            </div>
+          )}
 
-          {/* Form Content */}
-          <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-5 max-h-[75vh] overflow-y-auto custom-scroll">
+          {step === 1 ? (
+            /* Form Content */
+            <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-5 max-h-[75vh] overflow-y-auto custom-scroll">
             
             {/* Error Notification */}
             {error && (
@@ -530,15 +896,42 @@ export default function RegisterModal() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
-                  Caste / Sect (Optional)
+                  Caste (Optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={caste}
-                  onChange={(e) => setCaste(e.target.value)}
-                  placeholder="e.g. Govi, Karawa"
+                  onChange={(e) => {
+                    setCaste(e.target.value)
+                    if (e.target.value !== 'other') {
+                      setCasteOther('')
+                    }
+                  }}
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
-                />
+                >
+                  <option value="">Select caste (optional)</option>
+                  {casteOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.name_en}
+                    </option>
+                  ))}
+                </select>
+
+                {caste === 'other' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2"
+                  >
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={casteOther}
+                      onChange={(e) => setCasteOther(e.target.value)}
+                      placeholder="Please specify your caste..."
+                      className="w-full px-4 py-2 rounded-xl border border-[#E5A93C]/60 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-xs bg-amber-50/40 outline-none transition-all"
+                    />
+                  </motion.div>
+                )}
               </div>
 
               <div>
@@ -626,6 +1019,79 @@ export default function RegisterModal() {
                   placeholder="e.g. Sri Lanka, United Arab Emirates, UK, Australia"
                   className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
                 />
+              </div>
+            </div>
+
+            {/* Grid Row 8: Dietary Habits, Drinking Habits & Smoking Habits */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Dietary Habits (Optional)
+                </label>
+                <select
+                  value={dietaryHabits}
+                  onChange={(e) => {
+                    setDietaryHabits(e.target.value)
+                    if (e.target.value !== 'Other') {
+                      setDietaryHabitsOther('')
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                >
+                  <option value="">Select dietary habits (optional)</option>
+                  {dietaryHabitsOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+
+                {dietaryHabits === 'Other' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2"
+                  >
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={dietaryHabitsOther}
+                      onChange={(e) => setDietaryHabitsOther(e.target.value)}
+                      placeholder="Please specify dietary habit..."
+                      className="w-full px-4 py-2 rounded-xl border border-[#E5A93C]/60 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-xs bg-amber-50/40 outline-none transition-all"
+                    />
+                  </motion.div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Drinking Habits (Optional)
+                </label>
+                <select
+                  value={drinkingHabits}
+                  onChange={(e) => setDrinkingHabits(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                >
+                  <option value="">Select drinking habits (optional)</option>
+                  {drinkingHabitsOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Smoking Habits (Optional)
+                </label>
+                <select
+                  value={smokingHabits}
+                  onChange={(e) => setSmokingHabits(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                >
+                  <option value="">Select smoking habits (optional)</option>
+                  {smokingHabitsOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -807,6 +1273,176 @@ export default function RegisterModal() {
               )}
             </div>
 
+            {/* Identity Verification (Optional NIC Section) */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF6F0] border border-[#E5A93C]/40 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E5A93C]/15 border border-[#E5A93C]/30 flex items-center justify-center shrink-0 text-[#9B6B15]">
+                  <BadgeCheck className="w-5 h-5 text-[#9B6B15]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1C1412]">
+                      Identity Verification (Optional)
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                      Earn Badge
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#1C1412]/75 mt-0.5 leading-relaxed">
+                    Upload clear front and back photos of your National Identity Card (NIC). Our team will manually review your documents and award your profile a trusted <strong>Verified Badge</strong>. Documents are stored in secure encrypted private storage and are strictly confidential.
+                  </p>
+                </div>
+              </div>
+
+              {nicError && (
+                <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{nicError}</span>
+                </div>
+              )}
+
+              {/* Optional NIC Number */}
+              <div>
+                <label className="block text-[11px] font-bold text-[#1C1412] mb-1">
+                  NIC Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={nicNumber}
+                  onChange={(e) => setNicNumber(e.target.value)}
+                  placeholder="e.g. 199512345678 or 951234567V"
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs bg-white focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 outline-none transition-all"
+                />
+              </div>
+
+              {/* Front & Back Document Upload Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                {/* NIC Front */}
+                <div className="p-3.5 rounded-xl bg-white border border-[#EADFCF] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#1C1412] flex items-center gap-1.5">
+                      <FileCheck className="w-3.5 h-3.5 text-[#E5A93C]" />
+                      NIC Front Side
+                    </span>
+                    {nicFrontFile && (
+                      <button
+                        type="button"
+                        onClick={() => clearNic('front')}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        title="Remove image"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    ref={nicFrontInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleNicSelect('front', e)}
+                    className="hidden"
+                  />
+
+                  {nicFrontPreview ? (
+                    <div className="space-y-2">
+                      <div className="relative rounded-lg overflow-hidden border border-[#E5A93C]/50 h-28 bg-[#1C1412]/5">
+                        <img
+                          src={nicFrontPreview}
+                          alt="NIC Front Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Front selected
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => nicFrontInputRef.current?.click()}
+                          className="text-[11px] text-[#9B6B15] hover:underline font-semibold"
+                        >
+                          Replace
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => nicFrontInputRef.current?.click()}
+                      className="w-full h-24 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#E5A93C] flex flex-col items-center justify-center gap-1 bg-[#FAF6F0]/50 hover:bg-amber-50/50 transition-all text-gray-600"
+                    >
+                      <Upload className="w-4 h-4 text-[#E5A93C]" />
+                      <span className="text-xs font-semibold text-[#1C1412]">Upload Front Image</span>
+                      <span className="text-[10px] text-gray-500">JPG, PNG (max 5MB)</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* NIC Back */}
+                <div className="p-3.5 rounded-xl bg-white border border-[#EADFCF] space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#1C1412] flex items-center gap-1.5">
+                      <FileCheck className="w-3.5 h-3.5 text-[#E5A93C]" />
+                      NIC Back Side
+                    </span>
+                    {nicBackFile && (
+                      <button
+                        type="button"
+                        onClick={() => clearNic('back')}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        title="Remove image"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  <input
+                    ref={nicBackInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) => handleNicSelect('back', e)}
+                    className="hidden"
+                  />
+
+                  {nicBackPreview ? (
+                    <div className="space-y-2">
+                      <div className="relative rounded-lg overflow-hidden border border-[#E5A93C]/50 h-28 bg-[#1C1412]/5">
+                        <img
+                          src={nicBackPreview}
+                          alt="NIC Back Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Back selected
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => nicBackInputRef.current?.click()}
+                          className="text-[11px] text-[#9B6B15] hover:underline font-semibold"
+                        >
+                          Replace
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => nicBackInputRef.current?.click()}
+                      className="w-full h-24 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#E5A93C] flex flex-col items-center justify-center gap-1 bg-[#FAF6F0]/50 hover:bg-amber-50/50 transition-all text-gray-600"
+                    >
+                      <Upload className="w-4 h-4 text-[#E5A93C]" />
+                      <span className="text-xs font-semibold text-[#1C1412]">Upload Back Image</span>
+                      <span className="text-[10px] text-gray-500">JPG, PNG (max 5MB)</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* About Myself Textarea */}
             <div>
               <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
@@ -841,7 +1477,12 @@ export default function RegisterModal() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-[#1C1412]" />
-                    <span>Registering...</span>
+                    <span>Saving Profile...</span>
+                  </>
+                ) : selectedPackage !== 'FREE' ? (
+                  <>
+                    <span>Continue to Payment (Step 1 of 2)</span>
+                    <ArrowRight className="w-4 h-4 text-[#1C1412]" />
                   </>
                 ) : (
                   <>
@@ -853,6 +1494,255 @@ export default function RegisterModal() {
             </div>
 
           </form>
+          ) : (
+            /* Step 2: Dedicated Payment & Activation Page */
+            <div className="p-5 sm:p-7 space-y-6 max-h-[75vh] overflow-y-auto custom-scroll bg-[#FAF7F2]">
+              {/* Error Notification */}
+              {error && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-xs sm:text-sm flex items-start gap-2.5">
+                  <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* Plan Switcher Pills */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-white rounded-2xl border border-[#EADFCF]">
+                <span className="text-xs font-bold text-[#1C1412] flex items-center gap-1.5">
+                  <Crown className="w-4 h-4 text-[#9B6B15]" />
+                  <span>Selected Membership:</span>
+                </span>
+                <div className="flex flex-wrap gap-1.5 w-full sm:w-auto">
+                  {(['SILVER', 'GOLD', 'PLATINUM'] as const).map((code) => {
+                    const cfg = PACKAGE_CONFIGS[code]
+                    const isSel = selectedPackage === code
+                    return (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={() => setSelectedPackage(code)}
+                        className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                          isSel
+                            ? 'bg-[#1C1412] text-[#F7D878] border-[#E5A93C] shadow-sm'
+                            : 'bg-white text-[#1C1412]/80 border-gray-200 hover:border-[#E5A93C]'
+                        }`}
+                      >
+                        {cfg.name} ({cfg.priceDisplay})
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Selected Plan Details Card */}
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1C1412] via-[#2A1E1A] to-[#1C1412] text-white p-5 sm:p-6 border border-[#E5A93C]/50 shadow-xl">
+                <div className="absolute top-0 right-0 transform translate-x-4 -translate-y-4 w-32 h-32 bg-[#E5A93C]/10 rounded-full blur-2xl pointer-events-none" />
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E5A93C]/20 border border-[#E5A93C]/40 text-[11px] font-bold text-[#F7D878] uppercase tracking-wider mb-2">
+                      <Crown className="w-3.5 h-3.5 text-[#F7D878]" />
+                      <span>{currentPlan.badge}</span>
+                    </div>
+                    <h3 className="font-serif text-2xl font-bold text-white tracking-tight">{currentPlan.name}</h3>
+                    <p className="text-xs text-[#FAF6F0]/80 mt-0.5">{currentPlan.durationDisplay} Comprehensive Access</p>
+                  </div>
+
+                  <div className="sm:text-right">
+                    <div className="text-3xl font-serif font-bold text-[#F7D878]">{currentPlan.priceDisplay}</div>
+                    <div className="text-[11px] text-[#FAF6F0]/70">One-time payment • No auto-charge</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-4 text-xs">
+                  <div className="flex items-center gap-2 text-[#FAF6F0]/90">
+                    <CheckCircle2 className="w-4 h-4 text-[#F7D878] shrink-0" />
+                    <span>Send up to <strong>{currentPlan.interests}</strong> interest requests</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[#FAF6F0]/90">
+                    <CheckCircle2 className="w-4 h-4 text-[#F7D878] shrink-0" />
+                    <span>Accept up to <strong>{currentPlan.acceptInterests}</strong> received interests</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[#FAF6F0]/90">
+                    <CheckCircle2 className="w-4 h-4 text-[#F7D878] shrink-0" />
+                    <span>Message up to <strong>{currentPlan.messageConnections}</strong> connections (Unlimited chat)</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[#FAF6F0]/90">
+                    <CheckCircle2 className="w-4 h-4 text-[#F7D878] shrink-0" />
+                    <span>Full 8-point astrological & lifestyle match %</span>
+                  </div>
+                  {currentPlan.code === 'PLATINUM' && (
+                    <>
+                      <div className="flex items-center gap-2 text-[#F7D878] font-bold">
+                        <Sparkles className="w-4 h-4 text-[#F7D878] shrink-0" />
+                        <span>Ranked #1 Top of Search Page</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[#F7D878] font-bold">
+                        <CheckCircle2 className="w-4 h-4 text-[#F7D878] shrink-0" />
+                        <span>Direct verified contact phone number reveal</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Payment Method Tabs */}
+              <div>
+                <div className="flex items-center gap-2 p-1 bg-gray-100 rounded-2xl mb-4 border border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTab('ipay')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      paymentTab === 'ipay'
+                        ? 'bg-[#1C1412] text-[#F7D878] shadow-md'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>iPay Online Gateway (Instant)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentTab('bank')}
+                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                      paymentTab === 'bank'
+                        ? 'bg-[#1C1412] text-[#F7D878] shadow-md'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Building className="w-4 h-4" />
+                    <span>Bank Deposit / WhatsApp</span>
+                  </button>
+                </div>
+
+                {/* Tab 1: iPay Gateway */}
+                {paymentTab === 'ipay' && (
+                  <div className="p-5 rounded-3xl bg-white border border-[#E5A93C]/40 shadow-sm space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <h4 className="font-serif text-base font-bold text-[#1C1412] flex items-center gap-2">
+                          <span>iPay Payment Gateway by LOLC</span>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                            Instant Activation
+                          </span>
+                        </h4>
+                        <p className="text-xs text-[#1C1412]/70 mt-0.5">
+                          Pay securely with Visa, Mastercard, LankaQR, or iPay wallet app.
+                        </p>
+                      </div>
+
+                      {/* Payment brand badges */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-1 rounded bg-blue-50 border border-blue-200 text-blue-700 text-[10px] font-bold">
+                          VISA
+                        </span>
+                        <span className="px-2 py-1 rounded bg-red-50 border border-red-200 text-red-700 text-[10px] font-bold">
+                          Mastercard
+                        </span>
+                        <span className="px-2 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold">
+                          LankaQR
+                        </span>
+                        <span className="px-2 py-1 rounded bg-teal-50 border border-teal-200 text-teal-800 text-[10px] font-bold">
+                          iPay
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] text-xs text-[#1C1412]/80 space-y-1">
+                      <div className="flex items-center gap-2 font-semibold text-[#1C1412]">
+                        <Shield className="w-4 h-4 text-emerald-600" />
+                        <span>Certified Central Bank of Sri Lanka IPG Standard</span>
+                      </div>
+                      <p className="text-[11px] text-gray-600 pl-6">
+                        You will be redirected to the secure iPay checkout page to authenticate your payment. Your Dehadak subscription activates automatically upon completion.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleIpayPayment}
+                      disabled={ipayLoading}
+                      className="w-full btn-gold py-4 px-6 rounded-2xl font-bold text-sm sm:text-base text-[#1C1412] shadow-gold hover:shadow-gold-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      {ipayLoading ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin text-[#1C1412]" />
+                          <span>Connecting to iPay Gateway...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="w-5 h-5 text-[#1C1412]" />
+                          <span>Pay {currentPlan.priceDisplay} with iPay</span>
+                          <ArrowRight className="w-4 h-4 ml-1 text-[#1C1412]" />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Tab 2: Bank Deposit */}
+                {paymentTab === 'bank' && (
+                  <div className="p-5 rounded-3xl bg-white border border-[#EADFCF] shadow-sm space-y-4">
+                    <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] space-y-2">
+                      <p className="font-bold text-[#1C1412] flex items-center gap-1.5 text-xs sm:text-sm">
+                        <Building className="w-4 h-4 text-[#9B6B15]" />
+                        <span>Commercial Bank of Ceylon PLC</span>
+                      </p>
+                      <div className="text-xs space-y-1 font-mono text-[#1C1412]/90 bg-white p-3 rounded-xl border border-[#EADFCF]">
+                        <p><span className="font-sans font-semibold text-gray-500">Account Name:</span> Dehadak Matrimonial Services</p>
+                        <p><span className="font-sans font-semibold text-gray-500">Account Number:</span> 8009124456</p>
+                        <p><span className="font-sans font-semibold text-gray-500">Branch:</span> Colombo Super Grade</p>
+                        <p><span className="font-sans font-semibold text-gray-500">Amount:</span> <strong className="text-[#9B6B15]">{currentPlan.priceDisplay}</strong></p>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 space-y-1">
+                      <p className="font-bold flex items-center gap-1.5">
+                        <PhoneCall className="w-4 h-4 text-amber-700" />
+                        <span>Instant WhatsApp Activation</span>
+                      </p>
+                      <p className="text-[11px] text-amber-800">
+                        Please transfer {currentPlan.priceDisplay} to the account above and WhatsApp your deposit receipt/screenshot to our support team for manual verification within 15 minutes.
+                      </p>
+                    </div>
+
+                    <a
+                      href={`https://wa.me/94771234567?text=${encodeURIComponent(
+                        `Hello Dehadak Support, I have registered my profile (${email || fullName}) and would like to activate ${currentPlan.name} (${currentPlan.priceDisplay}) via bank deposit.`
+                      )}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all"
+                    >
+                      <PhoneCall className="w-4 h-4" />
+                      <span>Send Slip via WhatsApp (+94 77 123 4567)</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Alternative Options */}
+              <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="text-gray-500 hover:text-gray-800 font-semibold"
+                >
+                  ← Edit Profile Information
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    closeRegisterModal()
+                    window.location.href = '/profile'
+                  }}
+                  className="text-[#9B6B15] hover:text-[#7A530F] font-bold underline"
+                >
+                  Skip for now & use Free Explorer
+                </button>
+              </div>
+            </div>
+          )}
 
         </motion.div>
       </div>

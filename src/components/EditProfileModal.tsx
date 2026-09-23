@@ -11,8 +11,13 @@ import {
   Heart,
   Moon,
   Sparkles,
+  BadgeCheck,
+  FileCheck,
+  Trash2,
 } from 'lucide-react'
 import { API_BASE_URL } from '@/config'
+import { getGenderAvatar } from '@/utils/avatar'
+import { cleanPhotoUrl } from '@/utils/imageUrl'
 
 const districts = [
   'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
@@ -68,22 +73,31 @@ const zodiacSigns = [
   'Dhanu (Sagittarius)', 'Makara (Capricorn)', 'Kumbha (Aquarius)', 'Meena (Pisces)'
 ]
 
-function cleanPhotoUrl(url: any): string {
-  if (!url) return ''
-  if (typeof url === 'string') {
-    if (url.startsWith('{')) {
-      try {
-        const parsed = JSON.parse(url)
-        return parsed.url || url
-      } catch (e) {
-        return url
-      }
-    }
-    return url
-  }
-  if (typeof url === 'object' && url.url) return url.url
-  return String(url)
-}
+export const dietaryHabitsOptions = [
+  'Vegetarian',
+  'Vegan',
+  'Pescatarian (fish, no other meat)',
+  'Non-vegetarian',
+  'Other',
+  'Prefer not to say',
+]
+
+export const drinkingHabitsOptions = [
+  'Never drink',
+  'Occasionally / Socially',
+  'Regularly',
+  'Previously drank, now stopped',
+  'Prefer not to say',
+]
+
+export const smokingHabitsOptions = [
+  'Never smoke',
+  'Occasionally / Socially',
+  'Regularly',
+  'Previously smoked, now stopped',
+  'Prefer not to say',
+]
+
 
 interface EditProfileModalProps {
   isOpen: boolean
@@ -111,7 +125,62 @@ export default function EditProfileModal({
   const [dob, setDob] = useState('2000-01-01')
   const [height, setHeight] = useState("5'6\"")
   const [education, setEducation] = useState("Bachelor's Degree")
+
+  // Habits State
+  const [dietaryHabits, setDietaryHabits] = useState('')
+  const [dietaryHabitsOther, setDietaryHabitsOther] = useState('')
+  const [drinkingHabits, setDrinkingHabits] = useState('')
+  const [smokingHabits, setSmokingHabits] = useState('')
+
   const [caste, setCaste] = useState('')
+  const [casteOther, setCasteOther] = useState('')
+  const [casteOptions, setCasteOptions] = useState<Array<{ code: string; name_en: string; name_si: string }>>([
+    { code: 'prefer_not_to_say', name_en: 'Prefer not to say', name_si: 'ප්‍රකාශ කිරීමට අකමැතිය' },
+    { code: 'not_applicable', name_en: 'Not applicable', name_si: 'අදාළ නොවේ' },
+    { code: 'bathgama', name_en: 'Bathgama', name_si: 'බත්ගම' },
+    { code: 'berava', name_en: 'Berava', name_si: 'බෙරව' },
+    { code: 'durava', name_en: 'Durava', name_si: 'දුරාව' },
+    { code: 'govigama', name_en: 'Govigama (Goyigama)', name_si: 'ගොවිගම (ගොයිගම)' },
+    { code: 'karaiyar', name_en: 'Karaiyar', name_si: 'කරයියාර්' },
+    { code: 'karava', name_en: 'Karava', name_si: 'කරාව' },
+    { code: 'koviyar', name_en: 'Koviyar', name_si: 'කොවියර්' },
+    { code: 'mukkuvar', name_en: 'Mukkuvar', name_si: 'මුක්කුවර්' },
+    { code: 'nalavar', name_en: 'Nalavar', name_si: 'නලවර්' },
+    { code: 'navandanna', name_en: 'Navandanna', name_si: 'නවන්දන්න' },
+    { code: 'pallar', name_en: 'Pallar', name_si: 'පල්ලර්' },
+    { code: 'paraiyar', name_en: 'Paraiyar', name_si: 'පරයියාර්' },
+    { code: 'radala', name_en: 'Radala', name_si: 'රදළ' },
+    { code: 'rada', name_en: 'Rada', name_si: 'රදාව' },
+    { code: 'salagama', name_en: 'Salagama', name_si: 'සලාගම' },
+    { code: 'vahumpura', name_en: 'Vahumpura', name_si: 'වහුම්පුර' },
+    { code: 'vellalar', name_en: 'Vellalar', name_si: 'වෙල්ලාලර්' },
+    { code: 'other', name_en: 'Other — please specify', name_si: 'වෙනත් — කරුණාකර සඳහන් කරන්න' },
+  ])
+
+  // Identity Verification
+  const [verificationStatus, setVerificationStatus] = useState<string>('NOT_SUBMITTED')
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [nicNumber, setNicNumber] = useState('')
+  const [nicFrontFile, setNicFrontFile] = useState<File | null>(null)
+  const [nicFrontPreview, setNicFrontPreview] = useState<string | null>(null)
+  const [nicBackFile, setNicBackFile] = useState<File | null>(null)
+  const [nicBackPreview, setNicBackPreview] = useState<string | null>(null)
+  const [nicError, setNicError] = useState<string | null>(null)
+
+  const nicFrontInputRef = useRef<HTMLInputElement>(null)
+  const nicBackInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/lookup/caste-options`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.casteOptions && data.casteOptions.length > 0) {
+          setCasteOptions(data.casteOptions)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   const [religion, setReligion] = useState('Buddhist')
   const [district, setDistrict] = useState('Colombo')
   const [occupation, setOccupation] = useState('Software & IT')
@@ -156,7 +225,14 @@ export default function EditProfileModal({
 
       setHeight(profile.height || "5'6\"")
       setEducation(profile.education || "Bachelor's Degree")
-      setCaste(profile.ethnicity || '')
+      setCaste(profile.caste || profile.ethnicity || '')
+      setCasteOther(profile.caste_other || '')
+      setDietaryHabits(profile.dietary_habits || profile.food || '')
+      setDietaryHabitsOther(profile.dietary_habits_other || '')
+      setDrinkingHabits(profile.drinking_habits || profile.drinking || '')
+      setSmokingHabits(profile.smoking_habits || profile.smoking || '')
+      setVerificationStatus(profile.verification_status || 'NOT_SUBMITTED')
+      setRejectionReason(profile.verification_rejection_reason || '')
       setReligion(profile.religion || 'Buddhist')
       setDistrict(profile.district && profile.district !== 'Overseas' && profile.district !== 'Living Abroad' ? profile.district : 'Colombo')
       setOccupation(profile.profession || 'Software & IT')
@@ -166,12 +242,7 @@ export default function EditProfileModal({
       setJobCountry(profile.country || (isAbroad ? profile.city : 'Sri Lanka'))
 
       // Photo preview
-      const idNum = typeof profile.id === 'number' ? profile.id : parseInt(String(profile.id || '1'), 10) || 1
-      const isMale = String(profile.gender || '').toLowerCase() === 'male' || String(profile.gender || '').toLowerCase() === 'groom'
-      const malePortraits = ['/profile-male-1.jpg', '/profile-male-2.jpg', '/profile-male-3.jpg']
-      const femalePortraits = ['/profile-female-1.jpg', '/profile-female-2.jpg', '/profile-female-3.jpg']
-      const defaultPortraits = isMale ? malePortraits : femalePortraits
-      const fallbackPortrait = defaultPortraits[Math.abs(idNum) % defaultPortraits.length]
+      const fallbackPortrait = getGenderAvatar(profile.gender)
 
       if (profile.photos && profile.photos.length > 0) {
         const rawUrl = cleanPhotoUrl(profile.photos[0]?.url || profile.photos[0])
@@ -235,6 +306,44 @@ export default function EditProfileModal({
       const file = e.target.files[0]
       setHoroscopeFile(file)
       setHoroscopeFileName(file.name)
+    }
+  }
+
+  const handleNicSelect = (side: 'front' | 'back', e: React.ChangeEvent<HTMLInputElement>) => {
+    setNicError(null)
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      if (file.size > 5 * 1024 * 1024) {
+        setNicError('Each document image must be under 5MB in size.')
+        return
+      }
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+        setNicError('Please upload a valid JPG, PNG, or WEBP image.')
+        return
+      }
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        if (side === 'front') {
+          setNicFrontFile(file)
+          setNicFrontPreview(ev.target?.result as string)
+        } else {
+          setNicBackFile(file)
+          setNicBackPreview(ev.target?.result as string)
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const clearNic = (side: 'front' | 'back') => {
+    if (side === 'front') {
+      setNicFrontFile(null)
+      setNicFrontPreview(null)
+      if (nicFrontInputRef.current) nicFrontInputRef.current.value = ''
+    } else {
+      setNicBackFile(null)
+      setNicBackPreview(null)
+      if (nicBackInputRef.current) nicBackInputRef.current.value = ''
     }
   }
 
@@ -303,7 +412,9 @@ export default function EditProfileModal({
           birthMonth: String(birthDateObj.getMonth() + 1),
           birthDay: String(birthDateObj.getDate()),
           religion,
-          ethnicity: caste || 'Sinhalese',
+          caste: caste || null,
+          casteOther: caste === 'other' ? casteOther.trim() : null,
+          ethnicity: profile?.ethnicity && profile.ethnicity !== caste ? profile.ethnicity : 'Sinhalese',
           height: height || "5'6\"",
           civilStatus: civilStatus || 'Never Married',
           country: locationType === 'foreign' ? (jobCountry || 'Abroad') : 'Sri Lanka',
@@ -312,9 +423,13 @@ export default function EditProfileModal({
           visaType: locationType === 'foreign' ? 'Work Visa / PR' : 'Citizen',
           education: education || "Bachelor's Degree",
           profession: occupation || 'Software & IT',
-          drinking: profile.drinking || 'Never',
-          smoking: profile.smoking || 'Never',
-          food: profile.food || 'Non-Vegetarian',
+          drinking: drinkingHabits || 'Prefer not to say',
+          smoking: smokingHabits || 'Prefer not to say',
+          food: dietaryHabits === 'Other' && dietaryHabitsOther ? dietaryHabitsOther.trim() : (dietaryHabits || 'Prefer not to say'),
+          dietaryHabits,
+          dietaryHabitsOther: dietaryHabits === 'Other' ? dietaryHabitsOther.trim() : '',
+          drinkingHabits,
+          smokingHabits,
           differentlyAbled: false,
           horoscopeRequired,
           birthTime: horoscopeRequired ? birthTime : '',
@@ -336,6 +451,29 @@ export default function EditProfileModal({
       if (!updateRes.ok) {
         const data = await updateRes.json()
         throw new Error(data.error || 'Failed to update profile.')
+      }
+
+      // 4. Upload Optional NIC Verification documents if provided
+      if (nicFrontFile && nicBackFile) {
+        try {
+          const nicFormData = new FormData()
+          if (nicNumber.trim()) nicFormData.append('nicNumber', nicNumber.trim())
+          nicFormData.append('front', nicFrontFile)
+          nicFormData.append('frontImage', nicFrontFile)
+          nicFormData.append('back', nicBackFile)
+          nicFormData.append('backImage', nicBackFile)
+          const nicRes = await fetch(`${API_BASE_URL}/api/profile/nic-verification`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: nicFormData,
+          })
+          if (!nicRes.ok) {
+            const errData = await nicRes.json().catch(() => ({}))
+            console.error('NIC verification upload failed:', errData)
+          }
+        } catch (nicErr) {
+          console.warn('NIC upload note:', nicErr)
+        }
       }
 
       setSuccess(true)
@@ -544,15 +682,42 @@ export default function EditProfileModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
-                  Caste / Sect (Optional)
+                  Caste (Optional)
                 </label>
-                <input
-                  type="text"
+                <select
                   value={caste}
-                  onChange={(e) => setCaste(e.target.value)}
-                  placeholder="e.g. Govi, Karawa"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm outline-none bg-white"
-                />
+                  onChange={(e) => {
+                    setCaste(e.target.value)
+                    if (e.target.value !== 'other') {
+                      setCasteOther('')
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm outline-none bg-white transition-all"
+                >
+                  <option value="">Select caste (optional)</option>
+                  {casteOptions.map((opt) => (
+                    <option key={opt.code} value={opt.code}>
+                      {opt.name_en}
+                    </option>
+                  ))}
+                </select>
+
+                {caste === 'other' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2"
+                  >
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={casteOther}
+                      onChange={(e) => setCasteOther(e.target.value)}
+                      placeholder="Please specify your caste..."
+                      className="w-full px-4 py-2 rounded-xl border border-[#E5A93C]/60 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-xs bg-amber-50/40 outline-none transition-all"
+                    />
+                  </motion.div>
+                )}
               </div>
 
               <div>
@@ -637,6 +802,79 @@ export default function EditProfileModal({
               </div>
             </div>
 
+            {/* Row 7: Dietary Habits, Drinking Habits & Smoking Habits */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Dietary Habits (Optional)
+                </label>
+                <select
+                  value={dietaryHabits}
+                  onChange={(e) => {
+                    setDietaryHabits(e.target.value)
+                    if (e.target.value !== 'Other') {
+                      setDietaryHabitsOther('')
+                    }
+                  }}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm outline-none bg-white transition-all"
+                >
+                  <option value="">Select dietary habits (optional)</option>
+                  {dietaryHabitsOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+
+                {dietaryHabits === 'Other' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-2"
+                  >
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={dietaryHabitsOther}
+                      onChange={(e) => setDietaryHabitsOther(e.target.value)}
+                      placeholder="Please specify dietary habit..."
+                      className="w-full px-4 py-2 rounded-xl border border-[#E5A93C]/60 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-xs bg-amber-50/40 outline-none transition-all"
+                    />
+                  </motion.div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Drinking Habits (Optional)
+                </label>
+                <select
+                  value={drinkingHabits}
+                  onChange={(e) => setDrinkingHabits(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm outline-none bg-white transition-all"
+                >
+                  <option value="">Select drinking habits (optional)</option>
+                  {drinkingHabitsOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Smoking Habits (Optional)
+                </label>
+                <select
+                  value={smokingHabits}
+                  onChange={(e) => setSmokingHabits(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm outline-none bg-white transition-all"
+                >
+                  <option value="">Select smoking habits (optional)</option>
+                  {smokingHabitsOptions.map((opt) => (
+                    <option key={opt} value={opt}>{opt}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {/* Photo Section */}
             <div className="p-4 rounded-2xl bg-[#FAF6F0] border border-[#EADFCF] space-y-3">
               <label className="block text-xs font-bold text-[#1C1412]">
@@ -664,14 +902,21 @@ export default function EditProfileModal({
                 {photoPreview && (
                   <div className="flex items-center gap-3">
                     <img
-                      src={photoPreview}
+                      src={publicPhoto ? photoPreview : getGenderAvatar(gender)}
                       alt="Profile preview"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-[#E5A93C] shadow-sm"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-[#E5A93C] shadow-sm bg-white"
                     />
-                    <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Active Photo
-                    </span>
+                    <div>
+                      <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {publicPhoto ? 'Photo Public' : 'Avatar Mode (Photo Hidden)'}
+                      </span>
+                      {!publicPhoto && (
+                        <p className="text-[10px] text-gray-500">
+                          Public visitors see your {gender === 'female' ? 'female' : 'male'} avatar.
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -797,6 +1042,224 @@ export default function EditProfileModal({
                         <span className="text-xs text-[#1C1412]/80 truncate max-w-xs font-medium">
                           {horoscopeFileName}
                         </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Identity Verification (Optional NIC Section) */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF6F0] border border-[#E5A93C]/40 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl bg-[#E5A93C]/15 border border-[#E5A93C]/30 flex items-center justify-center shrink-0 text-[#9B6B15]">
+                  <BadgeCheck className="w-5 h-5 text-[#9B6B15]" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <h3 className="text-xs sm:text-sm font-bold text-[#1C1412]">
+                      Identity Verification
+                    </h3>
+                    {verificationStatus === 'VERIFIED' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Verified Member
+                      </span>
+                    )}
+                    {verificationStatus === 'PENDING' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300">
+                        Under Review
+                      </span>
+                    )}
+                    {verificationStatus === 'REJECTED' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-800 border border-red-300">
+                        Requires Resubmission
+                      </span>
+                    )}
+                    {verificationStatus === 'NOT_SUBMITTED' && (
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 border border-gray-300">
+                        Not Submitted
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#1C1412]/75 mt-0.5 leading-relaxed">
+                    Identity verification is optional. Upload your National Identity Card (NIC) to receive a verified trust badge. Documents are stored in secure private storage and never shown to the public.
+                  </p>
+                </div>
+              </div>
+
+              {/* Status Specific Notices */}
+              {verificationStatus === 'VERIFIED' && (
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Your profile is verified. Your documents have been reviewed and approved.</span>
+                </div>
+              )}
+
+              {verificationStatus === 'PENDING' && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+                  <span>Your submission is currently being reviewed by our team.</span>
+                </div>
+              )}
+
+              {verificationStatus === 'REJECTED' && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Verification was not approved</p>
+                    <p className="mt-0.5">{rejectionReason || 'Documents were unclear or did not match profile details.'}</p>
+                    <p className="mt-1 font-medium text-red-700">You can upload clear replacement photos below to reapply.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload controls (visible if NOT_SUBMITTED, REJECTED, or user wants to re-upload) */}
+              {verificationStatus !== 'VERIFIED' && (
+                <div className="space-y-3 pt-2 border-t border-[#E5A93C]/20">
+                  {nicError && (
+                    <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{nicError}</span>
+                    </div>
+                  )}
+
+                  {/* Optional NIC Number */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#1C1412] mb-1">
+                      NIC Number (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={nicNumber}
+                      onChange={(e) => setNicNumber(e.target.value)}
+                      placeholder="e.g. 199512345678 or 951234567V"
+                      className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs bg-white focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Front & Back Document Upload Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* NIC Front */}
+                    <div className="p-3.5 rounded-xl bg-white border border-[#EADFCF] space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#1C1412] flex items-center gap-1.5">
+                          <FileCheck className="w-3.5 h-3.5 text-[#E5A93C]" />
+                          NIC Front Side
+                        </span>
+                        {nicFrontFile && (
+                          <button
+                            type="button"
+                            onClick={() => clearNic('front')}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            title="Remove image"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        ref={nicFrontInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(e) => handleNicSelect('front', e)}
+                        className="hidden"
+                      />
+
+                      {nicFrontPreview ? (
+                        <div className="space-y-2">
+                          <div className="relative rounded-lg overflow-hidden border border-[#E5A93C]/50 h-28 bg-[#1C1412]/5">
+                            <img
+                              src={nicFrontPreview}
+                              alt="NIC Front Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Front selected
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => nicFrontInputRef.current?.click()}
+                              className="text-[11px] text-[#9B6B15] hover:underline font-semibold"
+                            >
+                              Replace
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => nicFrontInputRef.current?.click()}
+                          className="w-full h-24 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#E5A93C] flex flex-col items-center justify-center gap-1 bg-[#FAF6F0]/50 hover:bg-amber-50/50 transition-all text-gray-600"
+                        >
+                          <Upload className="w-4 h-4 text-[#E5A93C]" />
+                          <span className="text-xs font-semibold text-[#1C1412]">Upload Front Image</span>
+                          <span className="text-[10px] text-gray-500">JPG, PNG (max 5MB)</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* NIC Back */}
+                    <div className="p-3.5 rounded-xl bg-white border border-[#EADFCF] space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#1C1412] flex items-center gap-1.5">
+                          <FileCheck className="w-3.5 h-3.5 text-[#E5A93C]" />
+                          NIC Back Side
+                        </span>
+                        {nicBackFile && (
+                          <button
+                            type="button"
+                            onClick={() => clearNic('back')}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            title="Remove image"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        ref={nicBackInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={(e) => handleNicSelect('back', e)}
+                        className="hidden"
+                      />
+
+                      {nicBackPreview ? (
+                        <div className="space-y-2">
+                          <div className="relative rounded-lg overflow-hidden border border-[#E5A93C]/50 h-28 bg-[#1C1412]/5">
+                            <img
+                              src={nicBackPreview}
+                              alt="NIC Back Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" /> Back selected
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => nicBackInputRef.current?.click()}
+                              className="text-[11px] text-[#9B6B15] hover:underline font-semibold"
+                            >
+                              Replace
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => nicBackInputRef.current?.click()}
+                          className="w-full h-24 rounded-lg border-2 border-dashed border-gray-300 hover:border-[#E5A93C] flex flex-col items-center justify-center gap-1 bg-[#FAF6F0]/50 hover:bg-amber-50/50 transition-all text-gray-600"
+                        >
+                          <Upload className="w-4 h-4 text-[#E5A93C]" />
+                          <span className="text-xs font-semibold text-[#1C1412]">Upload Back Image</span>
+                          <span className="text-[10px] text-gray-500">JPG, PNG (max 5MB)</span>
+                        </button>
                       )}
                     </div>
                   </div>
