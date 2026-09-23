@@ -24,12 +24,13 @@ export default defineConfig({
         'images/*'
       ],
       manifest: {
-        name: 'Dehadak',
+        name: 'Dehadak - Two Hearts, One Journey',
         short_name: 'Dehadak',
         description: "Sri Lanka's trusted matrimonial platform for meaningful relationships and lifelong partnerships.",
-        theme_color: '#241A17',
-        background_color: '#FAF7F0',
+        theme_color: '#1c100c',
+        background_color: '#1c100c',
         display: 'standalone',
+        orientation: 'any',
         start_url: '/',
         scope: '/',
         lang: 'en',

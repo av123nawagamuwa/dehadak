@@ -21,6 +21,7 @@ import RegisterModal from "@/components/RegisterModal"
 import AuthPromptModal from "@/components/AuthPromptModal"
 import NotificationPromptModal from "@/components/NotificationPromptModal"
 import PageLoader from "@/components/PageLoader"
+import { Toaster } from "@/components/ui/sonner"
 import { RegisterModalProvider } from "@/context/RegisterModalContext"
 
 // Dedicated Admin Portal Pages
@@ -80,6 +81,7 @@ export default function App() {
         <AuthPromptModal />
         <NotificationPromptModal />
         <PageLoader />
+        <Toaster position="top-center" richColors />
       </div>
     </RegisterModalProvider>
   )

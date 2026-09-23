@@ -1,12 +1,13 @@
 {
-  "name": "Dehadak",
+  "name": "Dehadak - Two Hearts, One Journey",
   "short_name": "Dehadak",
   "description": "Sri Lanka's trusted matrimonial platform for meaningful relationships and lifelong partnerships.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#FAF7F0",
-  "theme_color": "#241A17",
+  "orientation": "any",
+  "background_color": "#1c100c",
+  "theme_color": "#1c100c",
   "lang": "en",
   "categories": ["lifestyle", "social"],
   "icons": [

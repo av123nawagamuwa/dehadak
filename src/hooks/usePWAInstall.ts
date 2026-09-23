@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { toast } from 'sonner'
 
 export interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -18,7 +19,7 @@ declare global {
   }
 }
 
-// Module-level global store for beforeinstallprompt
+// Module-level global store for beforeinstallprompt so early events are never lost
 let globalDeferredPrompt: BeforeInstallPromptEvent | null = null
 
 // Listen at the earliest possible window lifecycle
@@ -31,14 +32,12 @@ if (typeof window !== 'undefined') {
     e.preventDefault()
     globalDeferredPrompt = e as BeforeInstallPromptEvent
     window.__DEHADAK_DEFERRED_PROMPT__ = e as BeforeInstallPromptEvent
-    console.log('beforeinstallprompt fired')
     window.dispatchEvent(new CustomEvent('dehadak:pwa-prompt-available'))
   })
 
   window.addEventListener('appinstalled', () => {
     globalDeferredPrompt = null
     window.__DEHADAK_DEFERRED_PROMPT__ = null
-    console.log('Dehadak Installed successfully!')
     window.dispatchEvent(new CustomEvent('dehadak:pwa-installed'))
   })
 }
@@ -50,36 +49,51 @@ export function usePWAInstall() {
   const [isInstallable, setIsInstallable] = useState<boolean>(() => !!deferredPrompt)
   const [isInstalled, setIsInstalled] = useState<boolean>(false)
   const [isIOS, setIsIOS] = useState<boolean>(false)
+  const [isIPad, setIsIPad] = useState<boolean>(false)
   const [isAndroid, setIsAndroid] = useState<boolean>(false)
+  const [isSafari, setIsSafari] = useState<boolean>(false)
+  const [isIOSNonSafari, setIsIOSNonSafari] = useState<boolean>(false)
   const [isStandalone, setIsStandalone] = useState<boolean>(false)
+  const [isPreparing, setIsPreparing] = useState<boolean>(false)
   const [showInstructionsModal, setShowInstructionsModal] = useState<boolean>(false)
 
-  useEffect(() => {
-    // 1. Detect Standalone mode (already installed & running as PWA)
-    const checkStandalone = () => {
-      const isStandaloneMode =
-        window.matchMedia('(display-mode: standalone)').matches ||
-        window.navigator.standalone === true ||
-        document.referrer.includes('android-app://')
+  // 1. Detect Standalone mode (already installed & running as PWA)
+  const checkStandalone = useCallback(() => {
+    if (typeof window === 'undefined') return false
 
-      setIsStandalone(isStandaloneMode)
-      if (isStandaloneMode) {
-        setIsInstalled(true)
-      }
-      return isStandaloneMode
+    const isStandaloneDisplay = window.matchMedia('(display-mode: standalone)').matches
+    const isIOSStandalone = window.navigator.standalone === true
+    const isAndroidAppReferrer = typeof document !== 'undefined' && document.referrer.includes('android-app://')
+
+    const standaloneActive = isStandaloneDisplay || isIOSStandalone || isAndroidAppReferrer
+
+    setIsStandalone(standaloneActive)
+    if (standaloneActive) {
+      setIsInstalled(true)
     }
+    return standaloneActive
+  }, [])
 
-    const currentStandalone = checkStandalone()
+  useEffect(() => {
+    checkStandalone()
 
-    // 2. Detect Device Platform
+    if (typeof window === 'undefined') return
+
+    // 2. Detect Device Platform and Browser specifics
     const userAgent = window.navigator.userAgent.toLowerCase()
-    const isIOSDevice =
-      /iphone|ipad|ipod/.test(userAgent) ||
-      (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)
+    const isIPadDevice = /ipad/.test(userAgent) || (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) || isIPadDevice
     const isAndroidDevice = /android/.test(userAgent)
 
+    // Safari detection (excluding Chrome iOS 'crios', Firefox iOS 'fxios', Edge iOS 'edgios', Opera iOS 'opios', and webviews)
+    const isSafariBrowser = /safari/.test(userAgent) && !/crios|crmo|fxios|edgios|edg|opr|opios|ucbrowser/.test(userAgent)
+    const isIOSNonSafariBrowser = isIOSDevice && !isSafariBrowser
+
     setIsIOS(isIOSDevice)
+    setIsIPad(isIPadDevice)
     setIsAndroid(isAndroidDevice)
+    setIsSafari(isSafariBrowser)
+    setIsIOSNonSafari(isIOSNonSafariBrowser)
 
     // 3. Synchronize with global prompt if available
     const promptAvailable = globalDeferredPrompt || window.__DEHADAK_DEFERRED_PROMPT__ || null
@@ -88,22 +102,13 @@ export function usePWAInstall() {
       setIsInstallable(true)
     }
 
-    // 4. Debug Console Logs (as requested)
-    console.log('Native PWA install available:', !!promptAvailable)
-    console.log('Installed:', currentStandalone)
-    console.log('Standalone:', currentStandalone)
-    console.log('iOS:', isIOSDevice)
-    console.log('Android:', isAndroidDevice)
-
-    // 5. Event Listeners
+    // 4. Event Listeners
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       e.preventDefault()
       globalDeferredPrompt = e
       window.__DEHADAK_DEFERRED_PROMPT__ = e
       setDeferredPrompt(e)
       setIsInstallable(true)
-      console.log('beforeinstallprompt fired')
-      console.log('Native PWA install available:', true)
     }
 
     const handlePromptCustomEvent = () => {
@@ -120,7 +125,7 @@ export function usePWAInstall() {
       globalDeferredPrompt = null
       window.__DEHADAK_DEFERRED_PROMPT__ = null
       setShowInstructionsModal(false)
-      console.log('Installed: true')
+      toast.success('Dehadak has been added to your device.')
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
@@ -133,7 +138,6 @@ export function usePWAInstall() {
       if (e.matches) {
         setIsInstalled(true)
         setIsStandalone(true)
-        console.log('Standalone: true')
       }
     }
     mediaQuery.addEventListener('change', handleDisplayModeChange)
@@ -145,59 +149,68 @@ export function usePWAInstall() {
       window.removeEventListener('dehadak:pwa-installed', handleAppInstalled)
       mediaQuery.removeEventListener('change', handleDisplayModeChange)
     }
-  }, [])
+  }, [checkStandalone])
 
-  const installApp = useCallback(async (): Promise<'accepted' | 'dismissed' | 'manual-instructions' | 'already-installed'> => {
-    const activePrompt = deferredPrompt || globalDeferredPrompt || window.__DEHADAK_DEFERRED_PROMPT__
-
+  const installApp = useCallback(async (): Promise<'accepted' | 'dismissed' | 'manual-instructions' | 'already-installed' | 'unavailable'> => {
     // 1. If already installed or running standalone
     if (isInstalled || isStandalone) {
-      console.log('App is already installed.')
       return 'already-installed'
     }
 
-    // 2. If native beforeinstallprompt is available -> trigger native prompt
-    if (activePrompt) {
-      try {
-        console.log('Triggering native browser PWA install prompt...')
-        await activePrompt.prompt()
-        const choiceResult = await activePrompt.userChoice
-        console.log('User response to install prompt:', choiceResult.outcome)
+    setIsPreparing(true)
 
-        if (choiceResult.outcome === 'accepted') {
-          setIsInstalled(true)
-          setIsInstallable(false)
-          setDeferredPrompt(null)
-          globalDeferredPrompt = null
-          window.__DEHADAK_DEFERRED_PROMPT__ = null
+    try {
+      const activePrompt = deferredPrompt || globalDeferredPrompt || window.__DEHADAK_DEFERRED_PROMPT__
+
+      // 2. If native beforeinstallprompt is available -> trigger native prompt
+      if (activePrompt) {
+        try {
+          await activePrompt.prompt()
+          const choiceResult = await activePrompt.userChoice
+
+          if (choiceResult.outcome === 'accepted') {
+            setIsInstalled(true)
+            setIsInstallable(false)
+            setDeferredPrompt(null)
+            globalDeferredPrompt = null
+            window.__DEHADAK_DEFERRED_PROMPT__ = null
+            toast.success('Dehadak has been added to your device.')
+          } else {
+            toast.info('Installation was cancelled. You can install Dehadak later.')
+          }
+
+          return choiceResult.outcome
+        } catch (err) {
+          console.warn('[PWA] Error launching native install prompt:', err)
+          setShowInstructionsModal(true)
+          return 'manual-instructions'
         }
-        return choiceResult.outcome
-      } catch (err) {
-        console.warn('[PWA] Error launching native install prompt:', err)
+      }
+
+      // 3. If iOS / iPadOS -> open Apple installation instructions modal
+      if (isIOS) {
         setShowInstructionsModal(true)
         return 'manual-instructions'
       }
-    }
 
-    // 3. If iOS / iPadOS Safari -> open iOS installation instructions modal
-    if (isIOS) {
-      console.log('Opening iOS manual installation guide modal.')
+      // 4. Android or Desktop when native prompt has not fired or is unsupported
       setShowInstructionsModal(true)
       return 'manual-instructions'
+    } finally {
+      setIsPreparing(false)
     }
-
-    // 4. Fallback (Android/Desktop when native prompt not ready) -> open instructions modal
-    console.log('Native prompt not available. Opening fallback installation modal.')
-    setShowInstructionsModal(true)
-    return 'manual-instructions'
   }, [deferredPrompt, isInstalled, isStandalone, isIOS])
 
   return {
     isInstallable,
     isInstalled,
     isIOS,
+    isIPad,
     isAndroid,
+    isSafari,
+    isIOSNonSafari,
     isStandalone,
+    isPreparing,
     showInstructionsModal,
     setShowInstructionsModal,
     installApp,
