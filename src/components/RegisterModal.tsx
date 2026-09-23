@@ -198,10 +198,16 @@ export default function RegisterModal() {
   const activePlanCode = selectedPackage || 'FREE'
   const currentPlan = PACKAGE_CONFIGS[activePlanCode] || PACKAGE_CONFIGS.FREE
 
+  // Validation State
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
   useEffect(() => {
     if (isOpen) {
       setStep(1)
       setError('')
+      setFieldErrors({})
+      setTouched({})
       setSuccess(false)
       setIpayLoading(false)
     }
@@ -299,6 +305,162 @@ export default function RegisterModal() {
   const nicFrontInputRef = useRef<HTMLInputElement>(null)
   const nicBackInputRef = useRef<HTMLInputElement>(null)
 
+  // Validation Functions
+  const validateFullName = (name: string): string => {
+    const trimmed = (name || '').trim()
+    if (!trimmed) return 'Full name is required.'
+    if (trimmed.length < 2) return 'Full name must be at least 2 characters long.'
+    if (!/^[a-zA-Z\s.'-]+$/.test(trimmed)) return 'Full name should only contain letters and spaces.'
+    return ''
+  }
+
+  const validateEmail = (val: string): string => {
+    const trimmed = (val || '').trim()
+    if (!trimmed) return 'Email address is required.'
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    if (!emailRegex.test(trimmed)) return 'Please enter a valid email address (e.g. yourname@gmail.com).'
+    return ''
+  }
+
+  const validatePhone = (val: string, locType: string): string => {
+    const cleaned = (val || '').trim().replace(/[\s\-()]+/g, '')
+    if (!cleaned) return 'Phone number is required.'
+
+    const isSLFormat = /^(?:\+94|94|0)?7[0-9]{8}$/.test(cleaned)
+    if (locType === 'local') {
+      if (!isSLFormat) {
+        return 'Please enter a valid Sri Lankan mobile number (e.g. 0771234567 or +94771234567).'
+      }
+    } else {
+      // Foreign residence
+      if (!isSLFormat && !/^\+?[1-9]\d{7,14}$/.test(cleaned)) {
+        return 'Please enter a valid phone number with country code (e.g. +971501234567).'
+      }
+    }
+    return ''
+  }
+
+  const validatePassword = (pass: string): string => {
+    if (!pass) return 'Password is required.'
+    if (pass.length < 6) return 'Password must be at least 6 characters long.'
+    return ''
+  }
+
+  const validateAge = (val: string): string => {
+    if (!val) return 'Age is required.'
+    const num = parseInt(val, 10)
+    if (isNaN(num) || num < 18 || num > 80) return 'Age must be between 18 and 80 years.'
+    return ''
+  }
+
+  const validateJobCountry = (country: string, locType: string): string => {
+    if (locType === 'foreign' && !country.trim()) return 'Job country / residence is required.'
+    return ''
+  }
+
+  const validateCasteOther = (val: string, currentCaste: string): string => {
+    if (currentCaste === 'other' && !val.trim()) return 'Please specify your caste.'
+    return ''
+  }
+
+  const validateDietaryOther = (val: string, currentDiet: string): string => {
+    if (currentDiet === 'Other' && !val.trim()) return 'Please specify your dietary habit.'
+    return ''
+  }
+
+  const validateNicNumber = (val: string): string => {
+    const trimmed = (val || '').trim().toUpperCase()
+    if (!trimmed) return '' // Optional
+    const oldNic = /^[0-9]{9}[VX]$/
+    const newNic = /^[0-9]{12}$/
+    if (!oldNic.test(trimmed) && !newNic.test(trimmed)) {
+      return 'Invalid NIC format. Format: 9 digits + V/X (e.g. 951234567V) or 12 digits (e.g. 199512345678).'
+    }
+    return ''
+  }
+
+  const validateDescription = (desc: string): string => {
+    const trimmed = (desc || '').trim()
+    if (!trimmed) return 'Please provide a brief description about yourself.'
+    if (trimmed.length < 15) return 'Description should be at least 15 characters long.'
+    return ''
+  }
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    let err = ''
+    if (field === 'fullName') err = validateFullName(fullName)
+    else if (field === 'email') err = validateEmail(email)
+    else if (field === 'phone') err = validatePhone(phone, locationType)
+    else if (field === 'password') err = validatePassword(password)
+    else if (field === 'age') err = validateAge(age)
+    else if (field === 'jobCountry') err = validateJobCountry(jobCountry, locationType)
+    else if (field === 'casteOther') err = validateCasteOther(casteOther, caste)
+    else if (field === 'dietaryHabitsOther') err = validateDietaryOther(dietaryHabitsOther, dietaryHabits)
+    else if (field === 'nicNumber') err = validateNicNumber(nicNumber)
+    else if (field === 'description') err = validateDescription(description)
+
+    setFieldErrors(prev => ({ ...prev, [field]: err }))
+  }
+
+  const handleAutoFillBio = () => {
+    const introName = fullName.trim() || 'A matrimonial member'
+    const prof = occupation || 'Professional'
+    const rel = religion ? `${religion}` : 'traditional'
+    const suggested = `Hello, my name is ${introName}. I am a ${prof} from a ${rel} background. Looking for an educated, understanding, and caring life partner with mutual respect and genuine family values.`
+    setDescription(suggested)
+    setTouched(prev => ({ ...prev, description: true }))
+    setFieldErrors(prev => ({ ...prev, description: '' }))
+  }
+
+  const validateAll = (): boolean => {
+    const errs: Record<string, string> = {
+      fullName: validateFullName(fullName),
+      email: validateEmail(email),
+      phone: validatePhone(phone, locationType),
+      password: validatePassword(password),
+      age: validateAge(age),
+      jobCountry: validateJobCountry(jobCountry, locationType),
+      casteOther: validateCasteOther(casteOther, caste),
+      dietaryHabitsOther: validateDietaryOther(dietaryHabitsOther, dietaryHabits),
+      nicNumber: validateNicNumber(nicNumber),
+      description: validateDescription(description),
+    }
+
+    const activeErrors: Record<string, string> = {}
+    Object.entries(errs).forEach(([k, v]) => {
+      if (v) activeErrors[k] = v
+    })
+
+    setFieldErrors(activeErrors)
+
+    setTouched({
+      fullName: true,
+      email: true,
+      phone: true,
+      password: true,
+      age: true,
+      jobCountry: true,
+      casteOther: true,
+      dietaryHabitsOther: true,
+      nicNumber: true,
+      description: true,
+    })
+
+    if (Object.keys(activeErrors).length > 0) {
+      const firstField = Object.keys(activeErrors)[0]
+      const el = document.getElementById(`reg_field_${firstField}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.focus()
+      }
+      setError('Please check and correct the highlighted fields before proceeding.')
+      return false
+    }
+
+    return true
+  }
+
   // Handle DOB change to calculate Age automatically
   const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
@@ -376,24 +538,27 @@ export default function RegisterModal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    setLoading(true)
 
-    // Basic validations
-    if (!fullName.trim() || !email.trim() || !password || !phone.trim()) {
-      setError('Please fill in all required fields (Full Name, Email, Phone, Password).')
-      setLoading(false)
+    // Run complete custom validation
+    const isValid = validateAll()
+    if (!isValid) {
       return
     }
 
+    setLoading(true)
+
     try {
+      const cleanEmail = email.trim().toLowerCase()
+      const cleanPhone = phone.trim().replace(/[\s\-()]+/g, '')
+
       // 1. Register User in Auth
       const registerRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: email.trim(),
+          email: cleanEmail,
           password,
-          phone: phone.trim(),
+          phone: cleanPhone,
           verificationToken: 'skip-phone-verification',
         }),
       })
@@ -440,6 +605,7 @@ export default function RegisterModal() {
           city: locationType === 'foreign' ? (jobCountry || 'Abroad') : district,
           visaType: locationType === 'foreign' ? 'Work Visa / PR' : 'Citizen',
           education: education || "Bachelor's Degree",
+          profession: occupation || "Software & IT",
           drinking: drinkingHabits || 'Prefer not to say',
           smoking: smokingHabits || 'Prefer not to say',
           food: dietaryHabits === 'Other' && dietaryHabitsOther ? dietaryHabitsOther.trim() : (dietaryHabits || 'Prefer not to say'),
@@ -712,7 +878,7 @@ export default function RegisterModal() {
 
           {step === 1 ? (
             /* Form Content */
-            <form onSubmit={handleSubmit} className="p-5 sm:p-7 space-y-5 max-h-[75vh] overflow-y-auto custom-scroll">
+            <form onSubmit={handleSubmit} noValidate className="p-5 sm:p-7 space-y-5 max-h-[75vh] overflow-y-auto custom-scroll">
             
             {/* Error Notification */}
             {error && (
@@ -733,62 +899,134 @@ export default function RegisterModal() {
             {/* Grid Row 1: Full Name & Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                <label htmlFor="reg_field_fullName" className="block text-xs font-bold text-[#1C1412] mb-1.5">
                   Full Name <span className="text-[#E5A93C] font-bold">*</span>
                 </label>
                 <input
+                  id="reg_field_fullName"
                   type="text"
-                  required
                   value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
+                  onChange={(e) => {
+                    setFullName(e.target.value)
+                    if (touched.fullName) {
+                      setFieldErrors(prev => ({ ...prev, fullName: validateFullName(e.target.value) }))
+                    }
+                  }}
+                  onBlur={() => handleBlur('fullName')}
                   placeholder="e.g. Avishka Nawagamuwa"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    touched.fullName && fieldErrors.fullName
+                      ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                      : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                  }`}
                 />
+                {touched.fullName && fieldErrors.fullName && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.fullName}</span>
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                <label htmlFor="reg_field_email" className="block text-xs font-bold text-[#1C1412] mb-1.5">
                   Email Address <span className="text-[#E5A93C] font-bold">*</span>
                 </label>
                 <input
+                  id="reg_field_email"
                   type="email"
-                  required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (touched.email) {
+                      setFieldErrors(prev => ({ ...prev, email: validateEmail(e.target.value) }))
+                    }
+                  }}
+                  onBlur={() => handleBlur('email')}
                   placeholder="e.g. yourname@gmail.com"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    touched.email && fieldErrors.email
+                      ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                      : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                  }`}
                 />
+                {touched.email && fieldErrors.email && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.email}</span>
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Grid Row 2: Phone & Password */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
-                  Phone Number <span className="text-[#E5A93C] font-bold">*</span>
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="reg_field_phone" className="block text-xs font-bold text-[#1C1412]">
+                    Phone Number <span className="text-[#E5A93C] font-bold">*</span>
+                  </label>
+                  {phone.trim() && /^(?:\+94|94|0)?7[0-9]{8}$/.test(phone.trim().replace(/[\s\-()]+/g, '')) && (
+                    <span className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      SL Mobile Verified Format
+                    </span>
+                  )}
+                </div>
                 <input
+                  id="reg_field_phone"
                   type="tel"
-                  required
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="e.g. 0768913695"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                  onChange={(e) => {
+                    setPhone(e.target.value)
+                    if (touched.phone) {
+                      setFieldErrors(prev => ({ ...prev, phone: validatePhone(e.target.value, locationType) }))
+                    }
+                  }}
+                  onBlur={() => handleBlur('phone')}
+                  placeholder="e.g. 0768913695 or +94768913695"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    touched.phone && fieldErrors.phone
+                      ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                      : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                  }`}
                 />
+                {touched.phone && fieldErrors.phone ? (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.phone}</span>
+                  </p>
+                ) : (
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    {locationType === 'local'
+                      ? 'Local: 10 digits starting with 07X (e.g. 0771234567 or +94771234567)'
+                      : 'International format with country code (e.g. +971501234567)'}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                <label htmlFor="reg_field_password" className="block text-xs font-bold text-[#1C1412] mb-1.5">
                   Password <span className="text-[#E5A93C] font-bold">*</span>
                 </label>
                 <div className="relative">
                   <input
+                    id="reg_field_password"
                     type={showPassword ? 'text' : 'password'}
-                    required
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all pr-10"
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      if (touched.password) {
+                        setFieldErrors(prev => ({ ...prev, password: validatePassword(e.target.value) }))
+                      }
+                    }}
+                    onBlur={() => handleBlur('password')}
+                    placeholder="•••••••• (minimum 6 characters)"
+                    className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all pr-10 ${
+                      touched.password && fieldErrors.password
+                        ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                        : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                    }`}
                   />
                   <button
                     type="button"
@@ -798,6 +1036,12 @@ export default function RegisterModal() {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+                {touched.password && fieldErrors.password && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.password}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -833,19 +1077,35 @@ export default function RegisterModal() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                <label htmlFor="reg_field_age" className="block text-xs font-bold text-[#1C1412] mb-1.5">
                   Age <span className="text-[#E5A93C] font-bold">*</span>
                 </label>
                 <input
+                  id="reg_field_age"
                   type="number"
                   min="18"
                   max="80"
-                  required
                   value={age}
-                  onChange={(e) => setAge(e.target.value)}
+                  onChange={(e) => {
+                    setAge(e.target.value)
+                    if (touched.age) {
+                      setFieldErrors(prev => ({ ...prev, age: validateAge(e.target.value) }))
+                    }
+                  }}
+                  onBlur={() => handleBlur('age')}
                   placeholder="24"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    touched.age && fieldErrors.age
+                      ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                      : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                  }`}
                 />
+                {touched.age && fieldErrors.age && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.age}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -923,13 +1183,30 @@ export default function RegisterModal() {
                     className="mt-2"
                   >
                     <input
+                      id="reg_field_casteOther"
                       type="text"
                       maxLength={100}
                       value={casteOther}
-                      onChange={(e) => setCasteOther(e.target.value)}
+                      onChange={(e) => {
+                        setCasteOther(e.target.value)
+                        if (touched.casteOther) {
+                          setFieldErrors(prev => ({ ...prev, casteOther: validateCasteOther(e.target.value, caste) }))
+                        }
+                      }}
+                      onBlur={() => handleBlur('casteOther')}
                       placeholder="Please specify your caste..."
-                      className="w-full px-4 py-2 rounded-xl border border-[#E5A93C]/60 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-xs bg-amber-50/40 outline-none transition-all"
+                      className={`w-full px-4 py-2 rounded-xl border text-xs outline-none transition-all ${
+                        touched.casteOther && fieldErrors.casteOther
+                          ? 'border-red-400 bg-red-50/20 text-[#1C1412]'
+                          : 'border-[#E5A93C]/60 bg-amber-50/40 text-[#1C1412]'
+                      }`}
                     />
+                    {touched.casteOther && fieldErrors.casteOther && (
+                      <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{fieldErrors.casteOther}</span>
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -1008,17 +1285,33 @@ export default function RegisterModal() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
-                  Job Country <span className="text-[#E5A93C] font-bold">*</span>
+                <label htmlFor="reg_field_jobCountry" className="block text-xs font-bold text-[#1C1412] mb-1.5">
+                  Job Country / Residence <span className="text-[#E5A93C] font-bold">*</span>
                 </label>
                 <input
+                  id="reg_field_jobCountry"
                   type="text"
-                  required
                   value={jobCountry}
-                  onChange={(e) => setJobCountry(e.target.value)}
+                  onChange={(e) => {
+                    setJobCountry(e.target.value)
+                    if (touched.jobCountry) {
+                      setFieldErrors(prev => ({ ...prev, jobCountry: validateJobCountry(e.target.value, locationType) }))
+                    }
+                  }}
+                  onBlur={() => handleBlur('jobCountry')}
                   placeholder="e.g. Sri Lanka, United Arab Emirates, UK, Australia"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                  className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                    touched.jobCountry && fieldErrors.jobCountry
+                      ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                      : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                  }`}
                 />
+                {touched.jobCountry && fieldErrors.jobCountry && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.jobCountry}</span>
+                  </p>
+                )}
               </div>
             </div>
 
@@ -1051,13 +1344,30 @@ export default function RegisterModal() {
                     className="mt-2"
                   >
                     <input
+                      id="reg_field_dietaryHabitsOther"
                       type="text"
                       maxLength={100}
                       value={dietaryHabitsOther}
-                      onChange={(e) => setDietaryHabitsOther(e.target.value)}
+                      onChange={(e) => {
+                        setDietaryHabitsOther(e.target.value)
+                        if (touched.dietaryHabitsOther) {
+                          setFieldErrors(prev => ({ ...prev, dietaryHabitsOther: validateDietaryOther(e.target.value, dietaryHabits) }))
+                        }
+                      }}
+                      onBlur={() => handleBlur('dietaryHabitsOther')}
                       placeholder="Please specify dietary habit..."
-                      className="w-full px-4 py-2 rounded-xl border border-[#E5A93C]/60 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-xs bg-amber-50/40 outline-none transition-all"
+                      className={`w-full px-4 py-2 rounded-xl border text-xs outline-none transition-all ${
+                        touched.dietaryHabitsOther && fieldErrors.dietaryHabitsOther
+                          ? 'border-red-400 bg-red-50/20 text-[#1C1412]'
+                          : 'border-[#E5A93C]/60 bg-amber-50/40 text-[#1C1412]'
+                      }`}
                     />
+                    {touched.dietaryHabitsOther && fieldErrors.dietaryHabitsOther && (
+                      <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{fieldErrors.dietaryHabitsOther}</span>
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </div>
@@ -1303,16 +1613,33 @@ export default function RegisterModal() {
 
               {/* Optional NIC Number */}
               <div>
-                <label className="block text-[11px] font-bold text-[#1C1412] mb-1">
+                <label htmlFor="reg_field_nicNumber" className="block text-[11px] font-bold text-[#1C1412] mb-1">
                   NIC Number (Optional)
                 </label>
                 <input
+                  id="reg_field_nicNumber"
                   type="text"
                   value={nicNumber}
-                  onChange={(e) => setNicNumber(e.target.value)}
+                  onChange={(e) => {
+                    setNicNumber(e.target.value)
+                    if (touched.nicNumber) {
+                      setFieldErrors(prev => ({ ...prev, nicNumber: validateNicNumber(e.target.value) }))
+                    }
+                  }}
+                  onBlur={() => handleBlur('nicNumber')}
                   placeholder="e.g. 199512345678 or 951234567V"
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs bg-white focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 outline-none transition-all"
+                  className={`w-full px-3.5 py-2 rounded-xl border text-xs outline-none transition-all ${
+                    touched.nicNumber && fieldErrors.nicNumber
+                      ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                      : 'border-gray-200 text-xs bg-white focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-[#1C1412]'
+                  }`}
                 />
+                {touched.nicNumber && fieldErrors.nicNumber && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{fieldErrors.nicNumber}</span>
+                  </p>
+                )}
               </div>
 
               {/* Front & Back Document Upload Cards */}
@@ -1445,17 +1772,44 @@ export default function RegisterModal() {
 
             {/* About Myself Textarea */}
             <div>
-              <label className="block text-xs font-bold text-[#1C1412] mb-1.5">
-                About Myself (A brief description) <span className="text-[#E5A93C] font-bold">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="reg_field_description" className="block text-xs font-bold text-[#1C1412]">
+                  About Myself (A brief description) <span className="text-[#E5A93C] font-bold">*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAutoFillBio}
+                  className="text-[11px] text-[#9B6B15] hover:text-[#7A530E] hover:underline font-bold flex items-center gap-1 transition-colors"
+                  title="Generate a polite, respectful matrimonial bio"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#E5A93C]" />
+                  <span>Auto-fill friendly bio</span>
+                </button>
+              </div>
               <textarea
+                id="reg_field_description"
                 rows={3}
-                required
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value)
+                  if (touched.description) {
+                    setFieldErrors(prev => ({ ...prev, description: validateDescription(e.target.value) }))
+                  }
+                }}
+                onBlur={() => handleBlur('description')}
                 placeholder="Tell us about your background, hobbies, values, and what kind of partner you are searching for..."
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 text-sm bg-white outline-none transition-all"
+                className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none transition-all ${
+                  touched.description && fieldErrors.description
+                    ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 bg-red-50/15 text-[#1C1412]'
+                    : 'border-gray-200 focus:border-[#E5A93C] focus:ring-2 focus:ring-[#E5A93C]/20 bg-white text-[#1C1412]'
+                }`}
               />
+              {touched.description && fieldErrors.description && (
+                <p className="mt-1 text-xs text-red-600 flex items-center gap-1 font-medium">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{fieldErrors.description}</span>
+                </p>
+              )}
             </div>
 
             {/* Action Footer Buttons */}
