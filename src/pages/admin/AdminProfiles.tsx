@@ -608,10 +608,10 @@ export default function AdminProfiles() {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="font-bold text-sm text-amber-900">Gold VIP</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-900">
-                        Rs. 2,400
+                        Rs. 1,800
                       </span>
                     </div>
-                    <p className="text-[11px] text-amber-700 mb-2">4 Months duration</p>
+                    <p className="text-[11px] text-amber-700 mb-2">3 Months duration</p>
                     <ul className="text-[11px] text-amber-800 space-y-1 font-medium">
                       <li>• 50 Interest Requests</li>
                       <li>• 50 Acceptances</li>
@@ -632,10 +632,10 @@ export default function AdminProfiles() {
                     <div className="flex items-center justify-between mb-1.5">
                       <span className="font-bold text-sm text-purple-950">Royal Platinum</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900">
-                        Rs. 4,800
+                        Rs. 3,000
                       </span>
                     </div>
-                    <p className="text-[11px] text-purple-700 mb-2">6 Months duration</p>
+                    <p className="text-[11px] text-purple-700 mb-2">3 Months duration</p>
                     <ul className="text-[11px] text-purple-900 space-y-1 font-medium">
                       <li>• 150 Interest Requests</li>
                       <li>• 150 Acceptances</li>

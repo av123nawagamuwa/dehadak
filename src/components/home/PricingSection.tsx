@@ -33,11 +33,11 @@ export default function PricingSection() {
     {
       name: 'Gold VIP',
       tagline: 'Most Popular for Serious Seekers',
-      packLabel: '4 Months VIP',
+      packLabel: '3 Months VIP',
       monthlyPrice: 'Rs. 600',
-      totalCost: 'Rs. 2,400',
-      period: '4 Months Access',
-      durationMonths: 4,
+      totalCost: 'Rs. 1,800',
+      period: '3 Months Access',
+      durationMonths: 3,
       description: 'The premier choice for serious marriage seekers and families across Sri Lanka.',
       features: [
         'Send up to 50 interest requests',
@@ -55,11 +55,11 @@ export default function PricingSection() {
     {
       name: 'Royal Platinum',
       tagline: 'Elite Distinction & Direct Contact',
-      packLabel: '6 Months Elite',
-      monthlyPrice: 'Rs. 800',
-      totalCost: 'Rs. 4,800',
-      period: '6 Months Access',
-      durationMonths: 6,
+      packLabel: '3 Months Elite',
+      monthlyPrice: 'Rs. 1,000',
+      totalCost: 'Rs. 3,000',
+      period: '3 Months Access',
+      durationMonths: 3,
       description: 'Personalized matrimonial service with direct verified phone numbers and top search rank.',
       features: [
         'Top of the page search priority (Ranked #1 on Search page)',
