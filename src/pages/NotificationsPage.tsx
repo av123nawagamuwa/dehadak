@@ -30,6 +30,7 @@ import {
   subscribeUserToPush,
   unsubscribeUserFromPush,
 } from '@/utils/pushManager';
+import { getGenderAvatar } from '@/utils/avatar';
 import type { NotificationItem } from '@/components/NotificationDropdown';
 
 function timeAgo(dateString: string): string {
@@ -411,9 +412,7 @@ export default function NotificationsPage() {
             ) : (
               <div className="space-y-3">
                 {notifications.map((item) => {
-                  const genderAvatar = item.candidateGender === 'female'
-                    ? '/avatars/default-female.jpg'
-                    : '/avatars/default-male.jpg';
+                  const genderAvatar = getGenderAvatar(item.candidateGender);
 
                   const displayPhoto = (!item.isPhotoPrivate && item.photoUrl) ? item.photoUrl : genderAvatar;
 

@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { API_BASE_URL } from '@/config';
+import { getGenderAvatar } from '@/utils/avatar';
 
 export interface NotificationItem {
   id: number;
@@ -248,9 +249,7 @@ export default function NotificationDropdown({ unreadCount, onRefreshSummary }: 
             </div>
           ) : (
             notifications.map((item) => {
-              const genderAvatar = item.candidateGender === 'female'
-                ? '/avatars/default-female.jpg'
-                : '/avatars/default-male.jpg';
+              const genderAvatar = getGenderAvatar(item.candidateGender);
 
               const displayPhoto = (!item.isPhotoPrivate && item.photoUrl) ? item.photoUrl : genderAvatar;
 

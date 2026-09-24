@@ -20,7 +20,6 @@ import PaymentSuccess from "@/pages/PaymentSuccess"
 import RegisterModal from "@/components/RegisterModal"
 import AuthPromptModal from "@/components/AuthPromptModal"
 import NotificationPromptModal from "@/components/NotificationPromptModal"
-import PageLoader from "@/components/PageLoader"
 import { Toaster } from "@/components/ui/sonner"
 import { RegisterModalProvider } from "@/context/RegisterModalContext"
 
@@ -80,7 +79,6 @@ export default function App() {
         <RegisterModal />
         <AuthPromptModal />
         <NotificationPromptModal />
-        <PageLoader />
         <Toaster position="top-center" richColors />
       </div>
     </RegisterModalProvider>
