@@ -190,6 +190,16 @@ export default function PricingPage() {
       })
 
       const data = await res.json()
+      if (res.status === 401 || data.error?.toLowerCase().includes('token') || data.error?.toLowerCase().includes('expired')) {
+        localStorage.removeItem('dehadak_auth')
+        localStorage.removeItem('dehadak_user')
+        window.dispatchEvent(new Event('auth_state_changed'))
+        setPaymentModalPlan(null)
+        openRegisterModal(plan.code)
+        alert('Your login session has expired. Please log in or register to complete your payment.')
+        return
+      }
+
       if (!res.ok || !data.formFields || !data.checkoutUrl) {
         throw new Error(data.error || 'Failed to initiate iPay checkout.')
       }

@@ -89,7 +89,23 @@ export default function Navbar({ transparent = true }: NavbarProps) {
       fetch(`${API_BASE_URL}/api/messages/notifications/summary`, {
         headers: { Authorization: `Bearer ${auth}` },
       })
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (res.status === 401 || res.status === 400) {
+            const err = await res.json().catch(() => ({}))
+            if (res.status === 401 || err?.error?.toLowerCase().includes('token')) {
+              localStorage.removeItem('dehadak_auth')
+              localStorage.removeItem('dehadak_user')
+              setTotalUnread(0)
+              setUnreadMessages(0)
+              setUnreadInterests(0)
+              setUnreadNotifications(0)
+              window.dispatchEvent(new Event('auth_state_changed'))
+              return null
+            }
+          }
+          if (!res.ok) return null
+          return res.json()
+        })
         .then((data) => {
           if (data) {
             setUnreadMessages(data.unreadMessages || 0)

@@ -113,7 +113,18 @@ export default function MobileBottomNavigation() {
         Authorization: `Bearer ${token}`,
       },
     })
-      .then((res) => {
+      .then(async (res) => {
+        if (res.status === 401 || res.status === 400) {
+          const err = await res.json().catch(() => ({}))
+          if (res.status === 401 || err?.error?.toLowerCase().includes('token')) {
+            localStorage.removeItem('dehadak_auth')
+            localStorage.removeItem('dehadak_user')
+            setUnreadMessages(0)
+            setPendingInterests(0)
+            window.dispatchEvent(new Event('auth_state_changed'))
+            return null
+          }
+        }
         if (!res.ok) throw new Error("Failed to fetch summary")
         return res.json()
       })
