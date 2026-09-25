@@ -77,6 +77,7 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
   const [receivedInterests, setReceivedInterests] = useState<Interest[]>([])
   const [sentInterests, setSentInterests] = useState<Interest[]>([])
   const [newMessage, setNewMessage] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [showGuestPrompt, setShowGuestPrompt] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -386,8 +387,17 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
   const pendingInterestsCount = receivedInterests.filter((i) => i.status === 'pending').length
   const activeConv = conversations.find((c) => c.id === selectedChat)
 
+  const filteredConversations = conversations.filter((c) => {
+    if (!searchQuery.trim()) return true
+    const q = searchQuery.toLowerCase()
+    return (
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.lastMessage && c.lastMessage.toLowerCase().includes(q))
+    )
+  })
+
   return (
-    <div className="min-h-screen bg-light-bg pt-[72px]">
+    <div className="min-h-screen bg-[#FAF6F0] pt-[72px]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
         {/* Header */}
         <div className="mb-6">
@@ -453,70 +463,78 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
               className="flex gap-6 h-[calc(100vh-280px)] min-h-[500px]"
             >
               {/* Conversation List */}
-              <div className={`${selectedChat ? 'hidden md:block' : ''} w-full md:w-80 shrink-0 bg-white rounded-xl shadow-sm border border-light-border overflow-hidden`}>
-                <div className="p-4 border-b border-light-border">
+              <div className={`${selectedChat ? 'hidden md:block' : ''} w-full md:w-80 shrink-0 bg-white rounded-xl shadow-sm border border-[#EADFCF] overflow-hidden`}>
+                <div className="p-4 border-b border-[#EADFCF]">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1C1412]/50" />
                     <input
                       type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder={t('messages.searchConversations')}
-                      className="w-full pl-9 pr-4 py-2 rounded-lg bg-light-bg border border-light-border text-sm focus:outline-none focus:border-gold transition-colors"
+                      className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-white border border-[#EADFCF] text-[#1C1412] placeholder:text-[#1C1412]/50 text-sm focus:outline-none focus:border-[#E5A93C] focus:ring-1 focus:ring-[#E5A93C] transition-colors"
                     />
                   </div>
                 </div>
-                <div className="overflow-y-auto h-[calc(100%-65px)] divide-y divide-[#EADFCF]/60">
-                  {conversations.map((conv) => (
-                    <button
-                      key={conv.id}
-                      onClick={() => setSelectedChat(conv.id)}
-                      className={`w-full flex items-center gap-3.5 p-4 hover:bg-[#FAF6F0] transition-colors text-left ${
-                        selectedChat === conv.id
-                          ? 'bg-[#E5A93C]/10 border-l-4 border-[#E5A93C]'
-                          : conv.unread > 0
-                            ? 'bg-rose-50/30'
-                            : ''
-                      }`}
-                    >
-                      <div className="relative shrink-0">
-                        <img
-                          src={conv.image}
-                          alt={conv.name}
-                          className="w-12 h-12 rounded-full object-cover border border-[#EADFCF]"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = getGenderAvatar(conv.gender)
-                          }}
-                        />
-                        {conv.unread > 0 && (
-                          <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse shadow-sm">
-                            {conv.unread}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1">
-                          <span className={`text-sm truncate ${conv.unread > 0 ? 'font-bold text-[#1C1412]' : 'font-semibold text-[#1C1412]/90'}`}>
-                            {conv.name}
-                          </span>
-                          <span className="text-[11px] text-gray-400 shrink-0">{conv.time}</span>
+                <div className="overflow-y-auto h-[calc(100%-73px)] divide-y divide-[#EADFCF]/60">
+                  {filteredConversations.length === 0 ? (
+                    <div className="p-6 text-center text-sm text-[#1C1412]/50">
+                      {searchQuery ? 'No conversations matching search' : 'No conversations yet'}
+                    </div>
+                  ) : (
+                    filteredConversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => setSelectedChat(conv.id)}
+                        className={`w-full flex items-center gap-3.5 p-4 hover:bg-[#FAF6F0] transition-colors text-left ${
+                          selectedChat === conv.id
+                            ? 'bg-[#E5A93C]/10 border-l-4 border-[#E5A93C]'
+                            : conv.unread > 0
+                              ? 'bg-rose-50/30'
+                              : ''
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <img
+                            src={conv.image}
+                            alt={conv.name}
+                            className="w-12 h-12 rounded-full object-cover border border-[#EADFCF]"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = getGenderAvatar(conv.gender)
+                            }}
+                          />
+                          {conv.unread > 0 && (
+                            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center animate-pulse shadow-sm">
+                              {conv.unread}
+                            </span>
+                          )}
                         </div>
-                        <p className={`text-xs truncate mt-0.5 ${conv.unread > 0 ? 'font-bold text-[#1C1412]' : 'text-gray-500'}`}>
-                          {conv.lastMessage}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className={`text-sm truncate ${conv.unread > 0 ? 'font-bold text-[#1C1412]' : 'font-semibold text-[#1C1412]/90'}`}>
+                              {conv.name}
+                            </span>
+                            <span className="text-[11px] text-[#1C1412]/40 shrink-0">{conv.time}</span>
+                          </div>
+                          <p className={`text-xs truncate mt-0.5 ${conv.unread > 0 ? 'font-bold text-[#1C1412]' : 'text-[#1C1412]/60'}`}>
+                            {conv.lastMessage}
+                          </p>
+                        </div>
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 
               {/* Chat Area */}
-              <div className={`${selectedChat ? 'block' : 'hidden md:flex'} flex-1 bg-white rounded-xl shadow-sm border border-light-border flex flex-col overflow-hidden`}>
+              <div className={`${selectedChat ? 'block' : 'hidden md:flex'} flex-1 bg-white rounded-xl shadow-sm border border-[#EADFCF] flex flex-col overflow-hidden`}>
                 {selectedChat ? (
                   <>
                     {/* Chat Header */}
-                    <div className="flex items-center gap-3 p-4 border-b border-light-border">
+                    <div className="flex items-center gap-3 p-4 border-b border-[#EADFCF] bg-white">
                       <button
                         onClick={() => setSelectedChat(null)}
-                        className="md:hidden p-2 -ml-2 rounded-full hover:bg-light-bg"
+                        className="md:hidden p-2 -ml-2 rounded-full hover:bg-[#FAF6F0] text-[#1C1412]"
                       >
                         <ChevronRight className="w-5 h-5 rotate-180" />
                       </button>
@@ -540,29 +558,29 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                     </div>
 
                     {/* Encryption Notice */}
-                    <div className="px-4 py-2 bg-blue-50 text-center">
-                      <p className="text-xs text-blue-600 flex items-center justify-center gap-1">
+                    <div className="px-4 py-2 bg-[#FAF6F0] border-b border-[#EADFCF]/50 text-center">
+                      <p className="text-xs text-[#9B6B15] flex items-center justify-center gap-1 font-medium">
                         <Shield className="w-3.5 h-3.5" />
                         {t('messages.encrypted')}
                       </p>
                     </div>
 
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF6F0]/40">
                       {chatMessages.map((msg) => (
                         <div
                           key={msg.id}
                           className={`flex ${msg.from === 'me' ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-2xl px-4 py-2.5 ${
+                            className={`max-w-[70%] rounded-2xl px-4 py-2.5 shadow-2xs ${
                               msg.from === 'me'
-                                ? 'bg-gold text-dark-bg rounded-br-md'
-                                : 'bg-light-bg text-foreground rounded-bl-md'
+                                ? 'bg-[#E5A93C] text-[#1C1412] font-medium rounded-br-md'
+                                : 'bg-white text-[#1C1412] border border-[#EADFCF] rounded-bl-md'
                             }`}
                           >
                             <p className="text-sm">{msg.text}</p>
-                            <p className={`text-xs mt-1 ${msg.from === 'me' ? 'text-dark-bg/60' : 'text-muted-foreground'}`}>
+                            <p className={`text-xs mt-1 ${msg.from === 'me' ? 'text-[#1C1412]/70' : 'text-[#1C1412]/50'}`}>
                               {msg.time}
                             </p>
                           </div>
@@ -571,7 +589,7 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                     </div>
 
                     {/* Input */}
-                    <div className="p-4 border-t border-light-border">
+                    <div className="p-4 border-t border-[#EADFCF] bg-white">
                       <div className="flex gap-2">
                         <input
                           type="text"
@@ -579,11 +597,11 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                           onChange={(e) => setNewMessage(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                           placeholder={t('messages.typeMessage')}
-                          className="flex-1 px-4 py-2.5 rounded-xl bg-light-bg border border-light-border text-sm focus:outline-none focus:border-gold transition-colors"
+                          className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-[#EADFCF] text-[#1C1412] placeholder:text-[#1C1412]/50 text-sm focus:outline-none focus:border-[#E5A93C] focus:ring-1 focus:ring-[#E5A93C] transition-colors"
                         />
                         <button 
                           onClick={handleSendMessage}
-                          className="px-4 py-2.5 rounded-xl bg-gold text-dark-bg font-medium text-sm hover:bg-gold-light transition-colors"
+                          className="px-4 py-2.5 rounded-xl bg-[#E5A93C] text-[#1C1412] font-semibold text-sm hover:bg-[#F7D878] active:scale-95 transition-all shadow-xs flex items-center justify-center"
                         >
                           <Send className="w-4 h-4" />
                         </button>
@@ -591,10 +609,10 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                     </div>
                   </>
                 ) : (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                    <MessageCircle className="w-16 h-16 text-light-border mb-4" />
-                    <h3 className="font-semibold text-lg mb-2">{t('messages.selectConversation')}</h3>
-                    <p className="text-sm text-muted-foreground max-w-xs">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-white">
+                    <MessageCircle className="w-16 h-16 text-[#EADFCF] mb-4" />
+                    <h3 className="font-semibold text-lg mb-2 text-[#1C1412]">{t('messages.selectConversation')}</h3>
+                    <p className="text-sm text-[#1C1412]/60 max-w-xs">
                       {t('messages.selectConversationSubtitle')}
                     </p>
                   </div>
@@ -820,9 +838,9 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
 
         {showGuestPrompt && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-light-border">
-              <h3 className="text-xl font-semibold mb-2">Login required</h3>
-              <p className="text-sm text-muted-foreground mb-6">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-[#EADFCF]">
+              <h3 className="text-xl font-semibold mb-2 text-[#1C1412]">Login required</h3>
+              <p className="text-sm text-[#1C1412]/70 mb-6">
                 Guests can browse profiles, but requests and messages are available only after registration.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
@@ -840,7 +858,7 @@ export default function MessagesPage({ defaultTab }: MessagesPageProps = {}) {
                     setShowGuestPrompt(false)
                     navigate('/profile-creation')
                   }}
-                  className="flex-1 rounded-xl border border-light-border px-4 py-3 font-semibold text-foreground hover:bg-light-bg transition-colors"
+                  className="flex-1 rounded-xl border border-[#EADFCF] px-4 py-3 font-semibold text-[#1C1412] hover:bg-[#FAF6F0] transition-colors"
                 >
                   Register
                 </button>

@@ -38,6 +38,9 @@ module.exports = {
           dark: "#964552",
           blush: "#FBF2F4",
         },
+        'light-bg': '#FAF6F0',
+        'light-border': '#EADFCF',
+        'dark-bg': '#1C1412',
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

@@ -59,9 +59,23 @@
     font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif;
     letter-spacing: -0.015em;
   }
+
+  input, textarea, select {
+    color-scheme: light !important;
+  }
 }
 
 @layer utilities {
+  .bg-light-bg {
+    background-color: #FAF6F0 !important;
+  }
+  .border-light-border {
+    border-color: #EADFCF !important;
+  }
+  .text-dark-bg {
+    color: #1C1412 !important;
+  }
+
   /* Luxury Gold Gradient Text */
   .text-gold-gradient {
     background: linear-gradient(135deg, #F7D878 0%, #E5A93C 50%, #B87C1D 100%);
