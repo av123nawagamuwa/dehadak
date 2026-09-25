@@ -558,7 +558,7 @@ export default function SearchPage() {
   }>({ isOpen: false })
   const PROFILES_PER_PAGE = 9
 
-  // Immediate cleanup on logout
+  // Immediate cleanup on logout & sync interest updates
   useEffect(() => {
     const handleLogout = () => {
       setViewerMatchContext(null)
@@ -570,9 +570,23 @@ export default function SearchPage() {
       )
       setSortBy('latest')
     }
+
+    const handleInterestUpdate = (e: any) => {
+      const { profileId, status } = e.detail || {}
+      if (profileId && status) {
+        setProfiles((current) =>
+          current.map((p) =>
+            String(p.id) === String(profileId) ? { ...p, interestStatus: status } : p
+          )
+        )
+      }
+    }
+
     window.addEventListener('dehadak:logout', handleLogout)
+    window.addEventListener('dehadak:interest-updated', handleInterestUpdate)
     return () => {
       window.removeEventListener('dehadak:logout', handleLogout)
+      window.removeEventListener('dehadak:interest-updated', handleInterestUpdate)
     }
   }, [])
 
@@ -773,6 +787,11 @@ export default function SearchPage() {
               : item
           )
         )
+        window.dispatchEvent(
+          new CustomEvent('dehadak:interest-updated', {
+            detail: { profileId: profile.id, status: data.status || 'pending' },
+          })
+        )
         return
       }
 
@@ -798,6 +817,11 @@ export default function SearchPage() {
         current.map((item) =>
           item.id === profile.id ? { ...item, interestStatus: 'pending' } : item
         )
+      )
+      window.dispatchEvent(
+        new CustomEvent('dehadak:interest-updated', {
+          detail: { profileId: profile.id, status: 'pending' },
+        })
       )
     } catch (error) {
       console.error(error)

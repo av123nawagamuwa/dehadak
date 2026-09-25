@@ -9,11 +9,20 @@ import { API_BASE_URL } from '@/config'
 import { getGenderAvatar } from '@/utils/avatar'
 import { cleanPhotoUrl } from '@/utils/imageUrl'
 import { formatCandidatePrivacyName } from '@/components/ProfileDetailModal'
+import ProfileDetailModal from '@/components/ProfileDetailModal'
+import QuotaUpgradeModal from '@/components/QuotaUpgradeModal'
 
 export default function FeaturedProfiles() {
   const { t } = useTranslation()
   const { openRegisterModal } = useRegisterModal()
   const [profiles, setProfiles] = useState<any[]>([])
+  const [selectedProfileId, setSelectedProfileId] = useState<string | number | null>(null)
+  const [quotaModal, setQuotaModal] = useState<{
+    isOpen: boolean
+    feature?: string
+    packageCode?: string
+    message?: string
+  }>({ isOpen: false })
   const bannerVideoRef = useRef<HTMLVideoElement>(null)
 
   // Default curated authentic profiles for initial showcase
@@ -32,6 +41,7 @@ export default function FeaturedProfiles() {
       verified: true,
       premium: true,
       privacyMode: false,
+      interestStatus: 'idle',
     },
     {
       id: '2',
@@ -47,6 +57,7 @@ export default function FeaturedProfiles() {
       verified: true,
       premium: true,
       privacyMode: false,
+      interestStatus: 'idle',
     },
     {
       id: '3',
@@ -62,6 +73,7 @@ export default function FeaturedProfiles() {
       verified: true,
       premium: false,
       privacyMode: false,
+      interestStatus: 'idle',
     },
     {
       id: '4',
@@ -77,56 +89,187 @@ export default function FeaturedProfiles() {
       verified: true,
       premium: true,
       privacyMode: false,
+      interestStatus: 'idle',
     },
   ]
 
-  useEffect(() => {
-    const fetchFeatured = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/search?limit=4`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.profiles && data.profiles.length > 0) {
-            const mapped = data.profiles.map((p: any) => {
-              const isPhotoPrivate = Boolean(p.photo_private || p.photo_privacy === 0 || p.photo_privacy === false)
-              const rawPhoto = p.photos && p.photos.length > 0 ? (p.photos[0]?.url || p.photos[0]) : (p.avatar_url || '')
-              const cleaned = cleanPhotoUrl(rawPhoto)
-              const avatarFallback = getGenderAvatar(p.gender)
-              const finalPhoto = (!isPhotoPrivate && cleaned) ? cleaned : avatarFallback
-
-              return {
-                id: p.id || p.user_id,
-                name: formatCandidatePrivacyName(p.first_name, p.last_name, p.name),
-                age: p.birth_year ? new Date().getFullYear() - Number(p.birth_year) : (p.age || 27),
-                location: [p.city, p.district].filter(Boolean).join(', ') || 'Sri Lanka',
-                religion: p.religion || 'Buddhist',
-                ethnicity: p.ethnicity || 'Sinhalese',
-                height: p.height || "5'6\"",
-                profession: p.profession || 'Professional',
-                education: p.education || 'Graduate',
-                gender: p.gender || 'male',
-                image: finalPhoto,
-                verified: p.verification_status === 'VERIFIED' || p.verified === true,
-                premium: (p.plan || '').toLowerCase() === 'premium' || (p.plan || '').toLowerCase() === 'vip',
-                privacyMode: isPhotoPrivate,
-              }
-            })
-            setProfiles(mapped)
-            return
-          }
-        }
-      } catch (err) {
-        // Fallback to demo profiles
+  const fetchFeatured = async () => {
+    try {
+      const token = localStorage.getItem('dehadak_auth')
+      const headers: Record<string, string> = {}
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
       }
-      setProfiles(demoProfiles)
+      const res = await fetch(`${API_BASE_URL}/api/search?limit=4`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.profiles && data.profiles.length > 0) {
+          const mapped = data.profiles.map((p: any) => {
+            const isPhotoPrivate = Boolean(p.photo_private || p.photo_privacy === 0 || p.photo_privacy === false)
+            const rawPhoto = p.photos && p.photos.length > 0 ? (p.photos[0]?.url || p.photos[0]) : (p.avatar_url || '')
+            const cleaned = cleanPhotoUrl(rawPhoto)
+            const avatarFallback = getGenderAvatar(p.gender)
+            const finalPhoto = (!isPhotoPrivate && cleaned) ? cleaned : avatarFallback
+
+            return {
+              id: p.id || p.user_id,
+              name: formatCandidatePrivacyName(p.first_name, p.last_name, p.name),
+              age: p.birth_year ? new Date().getFullYear() - Number(p.birth_year) : (p.age || 27),
+              location: [p.city, p.district].filter(Boolean).join(', ') || 'Sri Lanka',
+              religion: p.religion || 'Buddhist',
+              ethnicity: p.ethnicity || 'Sinhalese',
+              caste: p.caste || '',
+              height: p.height || "5'6\"",
+              profession: p.profession || 'Professional',
+              education: p.education || 'Graduate',
+              gender: p.gender || 'male',
+              image: finalPhoto,
+              verified: p.verification_status === 'VERIFIED' || p.verified === true,
+              premium: (p.plan || '').toLowerCase() === 'premium' || (p.plan || '').toLowerCase() === 'vip',
+              privacyMode: isPhotoPrivate,
+              packageCode: p.package_code,
+              packageName: p.package_badge,
+              interestStatus: (p.interest_status || 'idle') as 'idle' | 'sending' | 'pending' | 'accepted' | 'declined',
+              preferenceMatch: p.preference_match || null,
+            }
+          })
+          setProfiles(mapped)
+          return
+        }
+      }
+    } catch (err) {
+      // Fallback to demo profiles
+    }
+    setProfiles(demoProfiles)
+  }
+
+  const handleSendInterest = async (profile: any) => {
+    const token = localStorage.getItem('dehadak_auth')
+    if (!token) {
+      window.dispatchEvent(
+        new CustomEvent('open-auth-prompt', {
+          detail: { memberName: profile.name, profileId: profile.id },
+        })
+      )
+      return
     }
 
+    if (profile.interestStatus && profile.interestStatus !== 'idle') {
+      return
+    }
+
+    setProfiles((current) =>
+      current.map((item) =>
+        item.id === profile.id ? { ...item, interestStatus: 'sending' } : item
+      )
+    )
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/interests`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ receiver_id: profile.id }),
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (response.status === 401) {
+        localStorage.removeItem('dehadak_auth')
+        window.dispatchEvent(new CustomEvent('open-register-modal'))
+        return
+      }
+
+      if (response.status === 409) {
+        const newStatus = (data.status || 'pending') as any
+        setProfiles((current) =>
+          current.map((item) =>
+            item.id === profile.id ? { ...item, interestStatus: newStatus } : item
+          )
+        )
+        window.dispatchEvent(
+          new CustomEvent('dehadak:interest-updated', {
+            detail: { profileId: profile.id, status: newStatus },
+          })
+        )
+        return
+      }
+
+      if (response.status === 403 && data.code === 'PACKAGE_LIMIT_REACHED') {
+        setQuotaModal({
+          isOpen: true,
+          feature: 'SEND_INTEREST',
+          message:
+            data.message ||
+            data.error ||
+            'You have reached your sent interest limit. Upgrade your package to send more interest requests.',
+        })
+        setProfiles((current) =>
+          current.map((item) =>
+            item.id === profile.id ? { ...item, interestStatus: 'idle' } : item
+          )
+        )
+        return
+      }
+
+      if (!response.ok) {
+        setProfiles((current) =>
+          current.map((item) =>
+            item.id === profile.id ? { ...item, interestStatus: 'idle' } : item
+          )
+        )
+        return
+      }
+
+      setProfiles((current) =>
+        current.map((item) =>
+          item.id === profile.id ? { ...item, interestStatus: 'pending' } : item
+        )
+      )
+      window.dispatchEvent(
+        new CustomEvent('dehadak:interest-updated', {
+          detail: { profileId: profile.id, status: 'pending' },
+        })
+      )
+    } catch {
+      setProfiles((current) =>
+        current.map((item) =>
+          item.id === profile.id ? { ...item, interestStatus: 'idle' } : item
+        )
+      )
+    }
+  }
+
+  useEffect(() => {
     fetchFeatured()
+
+    const handleInterestUpdate = (e: any) => {
+      const { profileId, status } = e.detail || {}
+      if (profileId && status) {
+        setProfiles((current) =>
+          current.map((p) =>
+            String(p.id) === String(profileId) ? { ...p, interestStatus: status } : p
+          )
+        )
+      } else {
+        fetchFeatured()
+      }
+    }
+
+    window.addEventListener('dehadak:interest-updated', handleInterestUpdate)
+    window.addEventListener('focus', fetchFeatured)
 
     if (bannerVideoRef.current) {
       bannerVideoRef.current.muted = true
       bannerVideoRef.current.defaultMuted = true
       bannerVideoRef.current.play().catch(() => {})
+    }
+
+    return () => {
+      window.removeEventListener('dehadak:interest-updated', handleInterestUpdate)
+      window.removeEventListener('focus', fetchFeatured)
     }
   }, [])
 
@@ -178,7 +321,13 @@ export default function FeaturedProfiles() {
               }}
               className="h-full"
             >
-              <ProfileCard {...profile} />
+              <ProfileCard
+                {...profile}
+                interestStatus={profile.interestStatus}
+                preferenceMatch={profile.preferenceMatch}
+                onViewProfile={() => setSelectedProfileId(profile.id)}
+                onSendInterest={() => handleSendInterest(profile)}
+              />
             </motion.div>
           ))}
         </div>
@@ -244,6 +393,33 @@ export default function FeaturedProfiles() {
         </motion.div>
 
       </div>
+
+      {/* Profile Detail Modal */}
+      <ProfileDetailModal
+        profileId={selectedProfileId}
+        isOpen={Boolean(selectedProfileId)}
+        onClose={() => setSelectedProfileId(null)}
+        interestStatus={
+          profiles.find((p) => String(p.id) === String(selectedProfileId))?.interestStatus || 'idle'
+        }
+        onSendInterest={(prof) => {
+          const found = profiles.find((p) => String(p.id) === String(prof.id))
+          if (found) {
+            handleSendInterest(found)
+          } else {
+            handleSendInterest(prof)
+          }
+        }}
+      />
+
+      {/* Quota Upgrade Modal */}
+      <QuotaUpgradeModal
+        isOpen={quotaModal.isOpen}
+        onClose={() => setQuotaModal({ isOpen: false })}
+        feature={quotaModal.feature}
+        packageCode={quotaModal.packageCode}
+        message={quotaModal.message}
+      />
     </section>
   )
 }
