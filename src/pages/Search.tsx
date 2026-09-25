@@ -12,7 +12,7 @@ import {
   Info,
 } from 'lucide-react'
 import ProfileCard, { type PreferenceMatchData } from '@/components/ProfileCard'
-import ProfileDetailModal from '@/components/ProfileDetailModal'
+import ProfileDetailModal, { formatCandidatePrivacyName } from '@/components/ProfileDetailModal'
 import MatchingPreferencesModal from '@/components/MatchingPreferencesModal'
 import QuotaUpgradeModal from '@/components/QuotaUpgradeModal'
 import { Input } from '@/components/ui/input'
@@ -625,7 +625,7 @@ export default function SearchPage() {
 
           return {
             id: p.id,
-            name: `${p.first_name || 'Member'} ${p.last_name ? p.last_name.charAt(0) + '.' : ''}`,
+            name: formatCandidatePrivacyName(p.first_name, p.last_name, p.name),
             age: calculatedAge > 18 ? calculatedAge : 24,
             location: loc,
             religion: p.religion || 'Buddhist',

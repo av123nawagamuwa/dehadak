@@ -51,6 +51,27 @@ function isFilledValue(val?: any): boolean {
   return true
 }
 
+export function formatCandidatePrivacyName(firstName?: string, lastName?: string, fallbackName?: string): string {
+  if (firstName) {
+    const cleanFirst = firstName.trim()
+    const cleanLast = (lastName || '').trim()
+    if (cleanLast) {
+      const lastInitial = cleanLast.replace(/\.+$/, '').charAt(0).toUpperCase()
+      return `${cleanFirst} ${lastInitial}.`
+    }
+    return cleanFirst
+  }
+  if (fallbackName) {
+    const parts = fallbackName.trim().split(/\s+/)
+    if (parts.length > 1) {
+      const lastInitial = parts[parts.length - 1].replace(/\.+$/, '').charAt(0).toUpperCase()
+      return `${parts[0]} ${lastInitial}.`
+    }
+    return parts[0]
+  }
+  return 'Candidate'
+}
+
 export default function ProfileDetailModal({
   profileId,
   isOpen,
@@ -76,9 +97,10 @@ export default function ProfileDetailModal({
     if (!profile?.id) return
     const token = localStorage.getItem('dehadak_auth')
     if (!token) {
+      const memberName = formatCandidatePrivacyName(profile.first_name, profile.last_name, profile.name)
       window.dispatchEvent(
         new CustomEvent('dehadak:open-auth-prompt', {
-          detail: { memberName: profile.name, profileId: profile.id },
+          detail: { memberName, profileId: profile.id },
         })
       )
       return
@@ -166,9 +188,10 @@ export default function ProfileDetailModal({
     } else if (profile) {
       const token = localStorage.getItem('dehadak_auth')
       if (!token) {
+        const memberName = formatCandidatePrivacyName(profile.first_name, profile.last_name, profile.name)
         window.dispatchEvent(
           new CustomEvent('dehadak:open-auth-prompt', {
-            detail: { memberName: profile.name, profileId: profile.id },
+            detail: { memberName, profileId: profile.id },
           })
         )
         return
@@ -209,10 +232,7 @@ export default function ProfileDetailModal({
   const photoVisible = !isPrivate || hasAccess
   const displayPhoto = (photoVisible && cleanedPhoto && !imgError) ? cleanedPhoto : fallbackPortrait
 
-  const displayName =
-    profile?.name ||
-    [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') ||
-    'Candidate'
+  const displayName = formatCandidatePrivacyName(profile?.first_name, profile?.last_name, profile?.name)
 
   const displayAge =
     profile?.age ||

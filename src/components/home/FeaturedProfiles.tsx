@@ -8,6 +8,7 @@ import { useRegisterModal } from '@/context/RegisterModalContext'
 import { API_BASE_URL } from '@/config'
 import { getGenderAvatar } from '@/utils/avatar'
 import { cleanPhotoUrl } from '@/utils/imageUrl'
+import { formatCandidatePrivacyName } from '@/components/ProfileDetailModal'
 
 export default function FeaturedProfiles() {
   const { t } = useTranslation()
@@ -95,7 +96,7 @@ export default function FeaturedProfiles() {
 
               return {
                 id: p.id || p.user_id,
-                name: `${p.first_name || ''} ${p.last_name ? p.last_name.charAt(0) + '.' : ''}`.trim() || 'Member',
+                name: formatCandidatePrivacyName(p.first_name, p.last_name, p.name),
                 age: p.birth_year ? new Date().getFullYear() - Number(p.birth_year) : (p.age || 27),
                 location: [p.city, p.district].filter(Boolean).join(', ') || 'Sri Lanka',
                 religion: p.religion || 'Buddhist',
