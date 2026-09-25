@@ -21,9 +21,11 @@ import {
   CreditCard,
   Building,
   PhoneCall,
+  Crop,
 } from 'lucide-react'
 import { API_BASE_URL } from '@/config'
 import { useRegisterModal } from '@/context/RegisterModalContext'
+import ImageCropModal from './ImageCropModal'
 
 export interface PackageConfig {
   code: string
@@ -280,6 +282,8 @@ export default function RegisterModal() {
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [publicPhoto, setPublicPhoto] = useState(true)
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [cropRawSrc, setCropRawSrc] = useState<string | null>(null)
 
   // Identity Verification (Optional NIC)
   const [nicNumber, setNicNumber] = useState('')
@@ -474,16 +478,29 @@ export default function RegisterModal() {
     }
   }
 
-  // Handle Photo selection
+  // Handle Photo selection with responsive crop editor
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
-      setPhotoFile(file)
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file (JPG, PNG, or WEBP).')
+        e.target.value = ''
+        return
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Photo must be less than 15MB.')
+        e.target.value = ''
+        return
+      }
+
       const reader = new FileReader()
       reader.onload = (ev) => {
-        setPhotoPreview(ev.target?.result as string)
+        const rawDataUrl = ev.target?.result as string
+        setCropRawSrc(rawDataUrl)
+        setCropModalOpen(true)
       }
       reader.readAsDataURL(file)
+      e.target.value = ''
     }
   }
 
@@ -1423,27 +1440,39 @@ export default function RegisterModal() {
                 <button
                   type="button"
                   onClick={() => photoInputRef.current?.click()}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white border border-gray-300 hover:border-[#E5A93C] text-xs font-bold text-[#1C1412] flex items-center justify-center gap-2 shadow-xs transition-all"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white border border-gray-300 hover:border-[#E5A93C] text-xs font-bold text-[#1C1412] flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer"
                 >
                   <Upload className="w-4 h-4 text-[#E5A93C]" />
-                  <span>Choose Photo</span>
+                  <span>{photoPreview ? 'Change Photo' : 'Choose Photo'}</span>
                 </button>
+
+                {photoPreview && (
+                  <button
+                    type="button"
+                    onClick={() => setCropModalOpen(true)}
+                    className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-[#FAF6F0] border border-[#E5A93C]/70 hover:bg-[#F5EEDB] text-xs font-bold text-[#1C1412] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    title="Reposition face and adjust zoom"
+                  >
+                    <Crop className="w-3.5 h-3.5 text-[#E5A93C]" />
+                    <span>Adjust Crop</span>
+                  </button>
+                )}
 
                 {photoPreview ? (
                   <div className="flex items-center gap-3">
                     <img
                       src={photoPreview}
                       alt="Profile preview"
-                      className="w-12 h-12 rounded-full object-cover border-2 border-[#E5A93C] shadow-sm"
+                      className="w-12 h-12 rounded-full object-cover border-2 border-[#E5A93C] shadow-sm bg-white"
                     />
                     <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1">
                       <CheckCircle2 className="w-3.5 h-3.5" />
-                      Photo selected
+                      Photo ready
                     </span>
                   </div>
                 ) : (
                   <span className="text-xs text-gray-500">
-                    JPG, PNG format (Max 5MB)
+                    JPG, PNG format (Max 15MB)
                   </span>
                 )}
               </div>
@@ -2100,6 +2129,18 @@ export default function RegisterModal() {
 
         </motion.div>
       </div>
+
+      {/* Profile Photo Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={cropRawSrc || photoPreview}
+        onClose={() => setCropModalOpen(false)}
+        onSave={(croppedFile, croppedPreviewUrl) => {
+          setPhotoFile(croppedFile)
+          setPhotoPreview(croppedPreviewUrl)
+        }}
+        userName={fullName || 'Your Profile'}
+      />
     </AnimatePresence>
   )
 }

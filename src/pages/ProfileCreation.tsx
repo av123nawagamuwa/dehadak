@@ -18,8 +18,10 @@ import {
   Info,
   Camera,
   AlertCircle,
+  Crop,
 } from 'lucide-react'
 import Stepper from '@/components/Stepper'
+import ImageCropModal from '@/components/ImageCropModal'
 import {
   Select,
   SelectContent,
@@ -286,6 +288,8 @@ export default function ProfileCreation() {
   const [verificationLoading, setVerificationLoading] = useState(false)
   const [loadingProfile, setLoadingProfile] = useState(isEditMode)
   const [photoFiles, setPhotoFiles] = useState<File[]>([])
+  const [cropModalOpen, setCropModalOpen] = useState(false)
+  const [cropRawSrc, setCropRawSrc] = useState<string | null>(null)
   const [horoscopePdfFile, setHoroscopePdfFile] = useState<File | null>(null)
   const photoInputRef = useRef<HTMLInputElement | null>(null)
   const horoscopeInputRef = useRef<HTMLInputElement | null>(null)
@@ -636,13 +640,19 @@ export default function ProfileCreation() {
       return
     }
 
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPG, PNG, or WEBP).')
+      return
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Photo must be less than 15MB.')
+      return
+    }
+
     try {
       const uploadedPhoto = await readFileAsDataUrl(file)
-      setPhotoFiles([file])
-      setFormData((prev) => ({
-        ...prev,
-        photos: [uploadedPhoto],
-      }))
+      setCropRawSrc(uploadedPhoto)
+      setCropModalOpen(true)
     } catch (error) {
       console.error(error)
       alert('Unable to load photo from your device.')
@@ -1473,8 +1483,17 @@ export default function ProfileCreation() {
               <div className="flex items-center gap-3 pt-1 justify-center sm:justify-start">
                 <button
                   type="button"
+                  onClick={() => setCropModalOpen(true)}
+                  className="text-xs font-semibold text-[#D4A72C] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Crop className="w-3.5 h-3.5" />
+                  <span>Adjust crop</span>
+                </button>
+                <span className="text-[#D4A72C]/40">•</span>
+                <button
+                  type="button"
                   onClick={handlePhotoUpload}
-                  className="text-xs font-semibold text-[#D4A72C] hover:underline"
+                  className="text-xs font-semibold text-[#D4A72C] hover:underline cursor-pointer"
                 >
                   Change photo
                 </button>
@@ -1482,7 +1501,7 @@ export default function ProfileCreation() {
                 <button
                   type="button"
                   onClick={removePhoto}
-                  className="text-xs font-medium text-red-600 hover:underline"
+                  className="text-xs font-medium text-red-600 hover:underline cursor-pointer"
                 >
                   Remove photo
                 </button>
@@ -1834,6 +1853,21 @@ export default function ProfileCreation() {
           </>
         )}
       </div>
+
+      {/* Profile Photo Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        imageSrc={cropRawSrc || formData.photos[0] || null}
+        onClose={() => setCropModalOpen(false)}
+        onSave={(croppedFile, croppedPreviewUrl) => {
+          setPhotoFiles([croppedFile])
+          setFormData((prev) => ({
+            ...prev,
+            photos: [croppedPreviewUrl],
+          }))
+        }}
+        userName={[formData.firstName, formData.lastName].filter(Boolean).join(' ') || 'Your Profile'}
+      />
     </div>
   )
 }
